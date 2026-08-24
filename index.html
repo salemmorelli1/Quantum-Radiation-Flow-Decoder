@@ -2,11 +2,852 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0; url=docs/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quantum Radiation Flow Decoder</title>
+  <meta name="theme-color" content="#070914">
+  <meta name="description" content="An interactive browser laboratory for exploring Page entropy, radiation telemetry, and a conditional normalizing-flow decoder surrogate.">
+  <title>Quantum Radiation Flow Decoder — Interactive Laboratory</title>
+  <style>
+    :root {
+      --ink: #f4f5ff;
+      --muted: #a9b0c8;
+      --quiet: #707996;
+      --bg: #070914;
+      --panel: rgba(15, 18, 35, 0.9);
+      --panel-2: rgba(20, 23, 44, 0.92);
+      --line: rgba(157, 169, 211, 0.2);
+      --cyan: #66e3ff;
+      --amber: #ffc35b;
+      --violet: #9a75ff;
+      --mint: #74f0c5;
+      --danger: #ff7897;
+      --radius: 22px;
+      --shadow: 0 26px 70px rgba(0, 0, 0, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; color-scheme: dark; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 82% 12%, rgba(107, 73, 216, 0.12), transparent 29rem),
+        radial-gradient(circle at 8% 66%, rgba(54, 203, 230, 0.07), transparent 30rem),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.33;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.8) 0 1px, transparent 1.4px),
+        radial-gradient(circle, rgba(102,227,255,.65) 0 1px, transparent 1.4px);
+      background-position: 13px 19px, 67px 81px;
+      background-size: 173px 179px, 251px 263px;
+      mask-image: linear-gradient(to bottom, black, transparent 88%);
+      z-index: -1;
+    }
+
+    button, input, select, a { font: inherit; }
+    button, a, input, select { -webkit-tap-highlight-color: transparent; }
+    button { color: inherit; }
+    a { color: inherit; text-decoration: none; }
+    :focus-visible { outline: 3px solid rgba(102, 227, 255, .78); outline-offset: 3px; }
+
+    .shell { width: min(1460px, calc(100% - 36px)); margin: 0 auto; }
+
+    .topbar {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: inline-flex; align-items: center; gap: 11px; font-weight: 800; letter-spacing: -.02em; }
+    .mark { width: 30px; height: 30px; position: relative; border: 1px solid rgba(102, 227, 255, .65); border-radius: 50%; }
+    .mark::before { content: ""; position: absolute; inset: 3px 10px; border: 1px solid var(--amber); border-radius: 50%; transform: rotate(-26deg); }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+
+    .button {
+      min-height: 43px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid rgba(172, 186, 230, .3);
+      border-radius: 999px;
+      background: rgba(13, 16, 30, .78);
+      padding: 0 17px;
+      font-weight: 800;
+      font-size: .88rem;
+      cursor: pointer;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .button:hover { transform: translateY(-2px); border-color: rgba(102,227,255,.6); }
+    .button.primary { color: #11121a; background: var(--amber); border-color: transparent; box-shadow: 0 12px 32px rgba(255,195,91,.16); }
+    .button.primary:hover { background: #ffd37d; border-color: transparent; }
+    .button.cyan { color: #061116; background: var(--cyan); border-color: transparent; }
+    .button.small { min-height: 36px; padding-inline: 13px; font-size: .78rem; }
+    .button.square { width: 44px; padding: 0; border-radius: 13px; font-size: 1rem; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, .92fr) minmax(520px, 1.08fr);
+      gap: clamp(34px, 5vw, 86px);
+      align-items: center;
+      padding: 64px 0 48px;
+    }
+    .eyebrow, .kicker {
+      color: var(--cyan);
+      font-size: .72rem;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 760px;
+      margin: 14px 0 18px;
+      font-size: clamp(4rem, 8vw, 8rem);
+      line-height: .78;
+      letter-spacing: -.07em;
+      font-weight: 850;
+    }
+    h1 em { display: block; color: var(--amber); font-family: Georgia, "Times New Roman", serif; font-weight: 500; letter-spacing: -.055em; }
+    .hero-copy { max-width: 720px; color: #bdc4d8; font-size: clamp(1rem, 1.5vw, 1.17rem); }
+    .pills { display: flex; flex-wrap: wrap; gap: 9px; margin: 24px 0; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: #cbd1e4;
+      font-weight: 800;
+      font-size: .73rem;
+      background: rgba(10,13,25,.58);
+    }
+    .pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 12px currentColor; }
+    .pill.amber i { background: var(--amber); }
+    .pill.mint i { background: var(--mint); }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .hero-model {
+      position: relative;
+      overflow: hidden;
+      min-height: 465px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: linear-gradient(145deg, rgba(17,20,40,.94), rgba(7,9,20,.98));
+      box-shadow: var(--shadow);
+      isolation: isolate;
+    }
+    .hero-model::before { content: ""; position: absolute; inset: -30%; background: conic-gradient(from 40deg, transparent, rgba(154,117,255,.13), transparent 30%, rgba(102,227,255,.06), transparent 60%); animation: drift 13s linear infinite; }
+    .hero-orbit { position: absolute; left: 36%; top: 47%; width: 210px; height: 74px; transform: translate(-50%,-50%) rotate(-14deg); border: 7px solid rgba(255,195,91,.72); border-left-color: transparent; border-radius: 50%; filter: drop-shadow(0 0 12px rgba(255,195,91,.35)); }
+    .hero-hole { position: absolute; left: 36%; top: 47%; width: 150px; aspect-ratio: 1; transform: translate(-50%,-50%); border-radius: 50%; background: #000; box-shadow: 0 0 7px #000, 0 0 27px 8px rgba(92,52,193,.52), 0 0 65px 16px rgba(137,91,255,.24); }
+    .hero-lens { position: absolute; left: 73%; top: 31%; width: 118px; aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--cyan); background: radial-gradient(circle at 42% 35%, rgba(102,227,255,.12), rgba(12,19,38,.88)); box-shadow: 0 0 28px rgba(102,227,255,.15); animation: lensFloat 5s ease-in-out infinite; }
+    .hero-lens::after { content: "LIVE LAB"; position: absolute; left: 50%; top: calc(100% + 11px); transform: translateX(-50%); white-space: nowrap; color: var(--cyan); font-size: .64rem; letter-spacing: .13em; font-weight: 900; }
+    .hero-packet { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 16px currentColor; animation: pulse 2s ease-in-out infinite; }
+    .hero-packet:nth-child(5) { left: 74%; top: 28%; }
+    .hero-packet:nth-child(6) { left: 78%; top: 39%; background: var(--amber); animation-delay: -.6s; }
+    .hero-packet:nth-child(7) { left: 68%; top: 35%; background: var(--violet); animation-delay: -1.2s; }
+    .hero-callout { position: absolute; left: 24px; bottom: 22px; max-width: 290px; padding: 14px 16px; border-left: 2px solid var(--amber); background: rgba(5,7,15,.72); color: #aeb5cb; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .73rem; }
+    .hero-callout strong { display: block; color: var(--ink); margin-bottom: 4px; }
+    .hero-chip { position: absolute; right: 22px; bottom: 22px; border: 1px solid rgba(116,240,197,.3); border-radius: 999px; padding: 7px 10px; color: var(--mint); background: rgba(7,13,19,.7); font-size: .68rem; font-weight: 900; }
+
+    .lab { padding: 30px 0 88px; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 24px; }
+    .section-head h2 { margin: 8px 0 5px; font: 600 clamp(2.5rem, 5vw, 5rem)/.95 Georgia, "Times New Roman", serif; letter-spacing: -.045em; }
+    .section-head p { color: var(--muted); max-width: 690px; margin-bottom: 0; }
+    .lab-status { min-width: 225px; text-align: right; }
+    .live-label { display: inline-flex; align-items: center; gap: 8px; font-size: .7rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; color: var(--mint); }
+    .live-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 5px rgba(116,240,197,.1); }
+    .lab-status small { display: block; color: var(--quiet); margin-top: 6px; }
+
+    .panel { border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius); box-shadow: 0 18px 48px rgba(0,0,0,.16); }
+    .transport {
+      display: grid;
+      grid-template-columns: auto minmax(180px, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 18px;
+      margin-bottom: 14px;
+      background: linear-gradient(90deg, rgba(20,23,43,.96), rgba(11,14,27,.94));
+    }
+    .play-group { display: flex; gap: 8px; }
+    .time-wrap { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+    .time-wrap label { font-size: .72rem; color: var(--muted); font-weight: 800; letter-spacing: .05em; }
+    input[type="range"] { width: 100%; accent-color: var(--amber); cursor: pointer; }
+    .time-value { color: var(--amber); font: 800 .88rem ui-monospace, SFMono-Regular, Menlo, monospace; min-width: 58px; text-align: right; }
+    .presets { display: flex; gap: 7px; flex-wrap: wrap; justify-content: end; }
+    .preset { border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px; background: transparent; color: var(--muted); font-size: .69rem; font-weight: 800; cursor: pointer; }
+    .preset:hover, .preset[aria-pressed="true"] { border-color: rgba(255,195,91,.55); color: var(--ink); background: rgba(255,195,91,.08); }
+
+    .metrics { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 14px; }
+    .metric { padding: 16px 17px 15px; min-width: 0; }
+    .metric-label { color: var(--quiet); font-size: .62rem; text-transform: uppercase; letter-spacing: .14em; font-weight: 900; }
+    .metric-value { margin-top: 7px; font: 600 clamp(1.45rem, 2.4vw, 2.5rem)/1 Georgia, "Times New Roman", serif; white-space: nowrap; }
+    .metric-note { color: var(--quiet); font-size: .62rem; margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .metric:nth-child(3) .metric-value { color: var(--amber); }
+    .metric:nth-child(4) .metric-value { color: var(--cyan); }
+    .metric:nth-child(5) .metric-value { color: var(--violet); }
+    .metric:nth-child(6) .metric-value { color: var(--mint); }
+
+    .workbench { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr); gap: 14px; }
+    .canvas-panel { position: relative; min-height: 580px; overflow: hidden; background: #050712; }
+    #radiationCanvas { display: block; width: 100%; height: 580px; touch-action: none; cursor: grab; }
+    #radiationCanvas.dragging { cursor: grabbing; }
+    .canvas-top { position: absolute; left: 18px; right: 18px; top: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; pointer-events: none; }
+    .canvas-title { padding: 9px 11px; border-radius: 10px; background: rgba(5,7,18,.72); backdrop-filter: blur(10px); }
+    .canvas-title strong { display: block; font-size: .82rem; }
+    .canvas-title span { color: var(--muted); font-size: .68rem; }
+    .quality-ring { --quality: 0deg; width: 70px; height: 70px; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--cyan) var(--quality), rgba(255,255,255,.1) 0); position: relative; }
+    .quality-ring::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: #0a0d1a; }
+    .quality-ring b, .quality-ring small { position: relative; z-index: 1; display: block; text-align: center; }
+    .quality-ring b { font-size: .84rem; }
+    .quality-ring small { color: var(--quiet); font-size: .49rem; text-transform: uppercase; }
+    .canvas-bottom { position: absolute; left: 18px; right: 18px; bottom: 16px; display: flex; align-items: end; justify-content: space-between; gap: 12px; pointer-events: none; }
+    .capture-readout { max-width: 330px; padding: 12px 14px; border-left: 2px solid var(--cyan); background: rgba(5,7,18,.78); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .7rem; color: #aeb8d0; }
+    .capture-readout strong { display: block; color: var(--ink); margin-bottom: 3px; }
+    .canvas-actions { display: flex; gap: 8px; pointer-events: auto; }
+
+    .decoder-panel { padding: 22px; display: flex; flex-direction: column; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .panel-head h3 { margin: 6px 0 0; font: 600 2rem/1 Georgia, "Times New Roman", serif; letter-spacing: -.035em; }
+    .decoder-score { margin: 28px 0 4px; font: 600 clamp(3rem, 6vw, 5.8rem)/.85 Georgia, "Times New Roman", serif; letter-spacing: -.05em; color: var(--violet); }
+    .score-caption { color: var(--muted); font-size: .74rem; }
+    .vector-legend { display: flex; gap: 14px; color: var(--muted); font-size: .66rem; margin: 28px 0 12px; }
+    .vector-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; background: var(--amber); }
+    .vector-legend span:last-child::before { background: var(--cyan); }
+    .vectors { display: grid; grid-template-columns: repeat(8, 1fr); gap: 7px; height: 176px; align-items: end; padding: 0 4px 18px; border-bottom: 1px solid var(--line); }
+    .vector-pair { height: 100%; display: flex; align-items: end; gap: 3px; }
+    .bar { flex: 1; min-width: 4px; border-radius: 4px 4px 1px 1px; transition: height .25s ease; }
+    .bar.secret { background: linear-gradient(to top, #cb7d00, var(--amber)); }
+    .bar.recovered { background: linear-gradient(to top, #258ba5, var(--cyan)); }
+    .decoder-equation { margin: 21px 0 12px; padding: 13px 14px; border: 1px solid rgba(154,117,255,.38); border-radius: 12px; background: rgba(48,32,93,.2); color: #d9d1ff; font: 700 .72rem/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .explain { color: var(--muted); font-size: .75rem; }
+    .decoder-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 18px; }
+
+    .curve-panel { grid-column: 1 / -1; padding: 22px; }
+    .curve-layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 24px; align-items: center; }
+    .chart-wrap { min-width: 0; }
+    #curveSvg { display: block; width: 100%; height: auto; min-height: 260px; overflow: visible; touch-action: none; cursor: crosshair; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 12px 18px; color: var(--muted); font-size: .67rem; margin-top: 4px; }
+    .chart-legend span::before { content: ""; display: inline-block; width: 16px; height: 3px; border-radius: 2px; margin: 0 7px 2px 0; background: var(--amber); }
+    .chart-legend span:nth-child(2)::before { background: var(--cyan); }
+    .chart-legend span:nth-child(3)::before { background: var(--violet); }
+    .curve-note { padding: 18px; border-radius: 16px; background: rgba(5,7,17,.5); border: 1px solid var(--line); }
+    .curve-note h3 { margin: 8px 0 12px; font: 600 1.7rem/1.05 Georgia, "Times New Roman", serif; }
+    .curve-note p { color: var(--muted); font-size: .73rem; }
+    .formula { padding: 12px; border: 1px solid rgba(255,195,91,.25); border-radius: 10px; color: #f0ddba; background: rgba(54,39,14,.14); font: 650 .68rem/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    .controls-panel { grid-column: 1 / -1; padding: 22px; }
+    .controls-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 18px; }
+    .control { padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: rgba(6,9,19,.4); }
+    .control label { display: flex; justify-content: space-between; gap: 14px; font-size: .7rem; font-weight: 800; color: #d3d8e7; margin-bottom: 10px; }
+    .control output { color: var(--cyan); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    select { width: 100%; min-height: 36px; color: var(--ink); border: 1px solid var(--line); border-radius: 9px; background: #0b0e1d; padding: 0 10px; }
+
+    .research { padding: 10px 0 90px; }
+    .research-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .research-card { padding: 24px; }
+    .research-card h3 { margin: 9px 0; font: 600 1.5rem/1.1 Georgia, "Times New Roman", serif; }
+    .research-card p { color: var(--muted); font-size: .79rem; margin: 0; }
+    .boundary { grid-column: 1 / -1; padding: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .boundary h2 { grid-column: 1 / -1; font: 600 clamp(2.2rem,4vw,4rem)/1 Georgia,"Times New Roman",serif; letter-spacing: -.04em; margin: 4px 0 8px; }
+    .claim { border-left: 2px solid var(--violet); padding: 14px 16px; background: rgba(78,55,139,.18); color: #b9bfd2; font-size: .78rem; }
+    .claim strong { color: var(--ink); }
+
+    footer { display: flex; justify-content: space-between; gap: 20px; padding: 24px 0 38px; border-top: 1px solid var(--line); color: var(--quiet); font-size: .65rem; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); opacity: 0; z-index: 10; padding: 10px 15px; border: 1px solid rgba(102,227,255,.4); border-radius: 999px; background: rgba(7,10,20,.94); color: var(--ink); font-size: .75rem; font-weight: 800; transition: .25s ease; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translate(-50%,0); }
+
+    @keyframes drift { to { transform: rotate(360deg); } }
+    @keyframes lensFloat { 50% { transform: translateY(10px); } }
+    @keyframes pulse { 50% { opacity: .35; transform: scale(.7); } }
+
+    @media (max-width: 1120px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-copy { max-width: 780px; }
+      .hero-model { min-height: 430px; }
+      .metrics { grid-template-columns: repeat(3, 1fr); }
+      .workbench { grid-template-columns: 1fr; }
+      .decoder-panel { min-height: 530px; }
+      .curve-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 780px) {
+      .shell { width: min(100% - 22px, 1460px); }
+      .topbar { min-height: 62px; }
+      .brand span:last-child { display: none; }
+      .top-actions .button:first-child { display: none; }
+      .hero { padding-top: 40px; gap: 30px; }
+      h1 { font-size: clamp(3.55rem, 19vw, 6rem); }
+      .hero-model { min-height: 380px; }
+      .hero-hole, .hero-orbit { left: 40%; }
+      .hero-lens { left: 72%; width: 95px; }
+      .section-head { display: block; }
+      .lab-status { text-align: left; margin-top: 15px; }
+      .transport { grid-template-columns: 1fr; }
+      .time-wrap { order: -1; }
+      .presets { justify-content: start; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .metric-value { font-size: 1.8rem; }
+      #radiationCanvas { height: 480px; }
+      .canvas-panel { min-height: 480px; }
+      .curve-panel, .controls-panel, .decoder-panel { padding: 17px; }
+      .controls-grid { grid-template-columns: 1fr 1fr; }
+      .research-grid { grid-template-columns: 1fr; }
+      .boundary { grid-template-columns: 1fr; }
+      .boundary h2 { grid-column: auto; }
+      footer { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+      .metrics { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .metric { padding: 13px; }
+      .controls-grid { grid-template-columns: 1fr; }
+      .canvas-bottom { align-items: stretch; flex-direction: column; }
+      .canvas-actions { align-self: end; }
+      .hero-model { min-height: 350px; }
+      .hero-callout { max-width: 210px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
 </head>
 <body>
-  <p><a href="docs/">Open the Quantum Radiation Flow Decoder laboratory</a>.</p>
+  <header class="shell topbar">
+    <a class="brand" href="#top" aria-label="Quantum Radiation Flow Decoder home">
+      <span class="mark" aria-hidden="true"></span><span>Quantum Radiation Flow Decoder</span>
+    </a>
+    <nav class="top-actions" aria-label="Project links">
+      <a class="button small primary" href="Quantum_Radiation_Flow_APA_Report.pdf" target="_blank" rel="noopener">Read the Report</a>
+      <a class="button small" href="https://github.com/salemmorelli1/Quantum-Radiation-Flow-Decoder" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="shell hero" aria-labelledby="hero-title">
+      <div>
+        <div class="eyebrow">Project 3 · AI for quantum information</div>
+        <h1 id="hero-title">Decode the <em>radiation.</em></h1>
+        <p class="hero-copy">A conditional normalizing-flow laboratory that keeps quantum Page entropy, classical telemetry entropy, and toy decoder fidelity mathematically distinct—then lets you explore how their relationship changes across evaporation time.</p>
+        <div class="pills" aria-label="Technical features">
+          <span class="pill"><i></i>Exact change of variables</span>
+          <span class="pill amber"><i></i>Conditional RealNVP</span>
+          <span class="pill mint"><i></i>PyTorch · float64</span>
+        </div>
+        <div class="hero-actions">
+          <a class="button primary" href="#laboratory">Open live laboratory</a>
+          <button class="button" id="heroPlay" type="button">▶ Start evaporation</button>
+        </div>
+      </div>
+      <div class="hero-model" aria-hidden="true">
+        <div class="hero-orbit"></div>
+        <div class="hero-hole"></div>
+        <div class="hero-lens"></div>
+        <span class="hero-packet"></span><span class="hero-packet"></span><span class="hero-packet"></span>
+        <div class="hero-callout"><strong>INTERACTION UNLOCKED</strong>Drag the cyan lens through the live radiation field. Its position changes capture quality and decoder fidelity.</div>
+        <span class="hero-chip">ANALYTIC SURROGATE</span>
+      </div>
+    </section>
+
+    <section class="shell lab" id="laboratory" aria-labelledby="lab-title">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Interactive radiation laboratory</div>
+          <h2 id="lab-title">Catch the signal. Scrub the Page curve.</h2>
+          <p>Run the evaporation clock, drag the decoder lens over emitted packets, or scrub the graph. Every control updates the model, the three information summaries, and the recovered toy state in real time.</p>
+        </div>
+        <div class="lab-status">
+          <span class="live-label" id="runState">Simulation ready</span>
+          <small>Browser analytic model · no network required</small>
+        </div>
+      </div>
+
+      <div class="panel transport">
+        <div class="play-group">
+          <button class="button square primary" id="playButton" type="button" aria-label="Play evaporation">▶</button>
+          <button class="button square" id="resetButton" type="button" aria-label="Reset simulation">↺</button>
+        </div>
+        <div class="time-wrap">
+          <label for="timeSlider">Evaporation time τ</label>
+          <input id="timeSlider" type="range" min="0" max="1000" value="180" aria-describedby="timeHelp">
+          <output class="time-value" id="timeOutput" for="timeSlider">0.180</output>
+          <span id="timeHelp" class="sr-only">Move from zero to one to scrub the evaporation timeline.</span>
+        </div>
+        <div class="presets" aria-label="Timeline presets">
+          <button class="preset" type="button" data-time="0.24">Early</button>
+          <button class="preset" type="button" data-time="0.50">Page time</button>
+          <button class="preset" type="button" data-time="0.82">Late</button>
+        </div>
+      </div>
+
+      <div class="metrics" aria-label="Live simulation metrics">
+        <article class="panel metric"><div class="metric-label">Evaporation time</div><div class="metric-value" id="metricTime">0.180</div><div class="metric-note">Normalized τ ∈ [0,1]</div></article>
+        <article class="panel metric"><div class="metric-label">Remaining mass</div><div class="metric-value" id="metricMass">0.936</div><div class="metric-note">Stopped M(τ) / M₀</div></article>
+        <article class="panel metric"><div class="metric-label">Page entropy</div><div class="metric-value" id="metricPage">—</div><div class="metric-note">Finite benchmark · nats</div></article>
+        <article class="panel metric"><div class="metric-label">Flow entropy</div><div class="metric-value" id="metricFlow">—</div><div class="metric-note">Classical telemetry surrogate</div></article>
+        <article class="panel metric"><div class="metric-label">Decoder fidelity</div><div class="metric-value" id="metricFidelity">—</div><div class="metric-note">Paired toy-state score</div></article>
+        <article class="panel metric"><div class="metric-label">Packets resolved</div><div class="metric-value" id="metricPackets">0</div><div class="metric-note">Inside decoder lens</div></article>
+      </div>
+
+      <div class="workbench">
+        <article class="panel canvas-panel">
+          <canvas id="radiationCanvas" tabindex="0" role="application" aria-label="Interactive Hawking radiation field. Drag the cyan decoder lens with a mouse, touch, or arrow keys."></canvas>
+          <div class="canvas-top">
+            <div class="canvas-title"><strong>Radiation telemetry field</strong><span>Drag the cyan lens · arrow keys also work</span></div>
+            <div class="quality-ring" id="qualityRing"><div><b id="qualityValue">0%</b><small>capture</small></div></div>
+          </div>
+          <div class="canvas-bottom">
+            <div class="capture-readout" aria-live="polite"><strong id="captureTitle">Find emitted packets</strong><span id="captureText">Move the lens across the field. Brighter packets carry more accessible signal in this toy telemetry model.</span></div>
+            <div class="canvas-actions">
+              <button class="button small" id="assistButton" type="button">Find strongest signal</button>
+              <button class="button small cyan" id="pulseButton" type="button">Decode pulse</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel decoder-panel">
+          <div class="panel-head"><div><div class="kicker">Information decryption</div><h3>Recovered state</h3></div><button class="button small" id="secretButton" type="button">New secret</button></div>
+          <div class="decoder-score" id="decoderScore">0.250</div>
+          <div class="score-caption">Paired toy-state fidelity surrogate · higher is better</div>
+          <div class="vector-legend"><span>Secret coordinate</span><span>Recovered coordinate</span></div>
+          <div class="vectors" id="vectorBars" aria-label="Secret and recovered state coordinate comparison"></div>
+          <div class="decoder-equation">y<sub>τ</sub> = v(τ) · s + [1 − v(τ)] · ε<br>ẑ = f<sub>θ</sub><sup>−1</sup>(y<sub>τ</sub> | τ, M<sub>τ</sub>)</div>
+          <p class="explain">Lens overlap controls telemetry access; time controls visibility. The inverse flow identifies a latent coordinate only within this paired toy setup—it does not prove recovery from a physical quantum channel.</p>
+          <div class="decoder-actions"><button class="button primary small" id="jumpPageButton" type="button">Jump to Page time</button><button class="button small" id="reseedButton" type="button">Reseed radiation</button></div>
+        </article>
+
+        <article class="panel curve-panel">
+          <div class="curve-layout">
+            <div class="chart-wrap">
+              <div class="panel-head"><div><div class="kicker">Three-curve view</div><h3>Keep unlike information measures distinct.</h3></div><span class="pill"><i></i>Drag chart to scrub</span></div>
+              <svg id="curveSvg" viewBox="0 0 900 285" role="img" aria-labelledby="curveTitle curveDesc">
+                <title id="curveTitle">Entropy and decoder curves across evaporation time</title>
+                <desc id="curveDesc">Amber shows Page entropy, cyan shows a classical flow entropy surrogate, and violet shows paired decoder fidelity.</desc>
+                <g id="gridLines"></g>
+                <path id="areaPage" fill="url(#pageFade)" stroke="none"></path>
+                <path id="pathPage" fill="none" stroke="#ffc35b" stroke-width="4" stroke-linecap="round"></path>
+                <path id="pathFlow" fill="none" stroke="#66e3ff" stroke-width="3" stroke-linecap="round"></path>
+                <path id="pathFidelity" fill="none" stroke="#9a75ff" stroke-width="3" stroke-linecap="round"></path>
+                <line id="curveCursor" x1="0" x2="0" y1="20" y2="242" stroke="#f4f5ff" stroke-opacity=".52" stroke-dasharray="5 7"></line>
+                <circle id="dotPage" r="6" fill="#ffc35b" stroke="#070914" stroke-width="3"></circle>
+                <circle id="dotFlow" r="5" fill="#66e3ff" stroke="#070914" stroke-width="3"></circle>
+                <circle id="dotFidelity" r="5" fill="#9a75ff" stroke="#070914" stroke-width="3"></circle>
+                <defs><linearGradient id="pageFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc35b" stop-opacity=".16"></stop><stop offset="1" stop-color="#ffc35b" stop-opacity="0"></stop></linearGradient></defs>
+                <text x="42" y="275" fill="#747e9a" font-size="12">0</text><text x="435" y="275" fill="#747e9a" font-size="12">PAGE TIME</text><text x="842" y="275" fill="#747e9a" font-size="12">1</text>
+              </svg>
+              <div class="chart-legend"><span>Quantum Page entropy</span><span>Classical flow entropy</span><span>Decoder fidelity</span></div>
+            </div>
+            <aside class="curve-note">
+              <div class="kicker">Current regime</div>
+              <h3 id="regimeTitle">Pre-Page accumulation</h3>
+              <p id="regimeText">The radiation subsystem is still smaller than the remaining black-hole subsystem. Expected entanglement rises as packets are emitted.</p>
+              <div class="formula">S<sub>Page</sub> = H<sub>mn</sub> − H<sub>n</sub> − (m−1)/(2n)<br>m = min(dim R, dim B)</div>
+            </aside>
+          </div>
+        </article>
+
+        <article class="panel controls-panel">
+          <div class="panel-head"><div><div class="kicker">Model controls</div><h3>Stress-test the surrogate.</h3></div><span class="pill amber"><i></i>Controls are explanatory</span></div>
+          <div class="controls-grid">
+            <div class="control"><label for="qubitSelect">Total toy qubits <output id="qubitOutput">14</output></label><select id="qubitSelect"><option>8</option><option>10</option><option>12</option><option selected>14</option><option>16</option></select></div>
+            <div class="control"><label for="scrambleSlider">Scramble strength <output id="scrambleOutput">0.72</output></label><input id="scrambleSlider" type="range" min="0" max="100" value="72"></div>
+            <div class="control"><label for="widthSlider">Visibility width <output id="widthOutput">0.080</output></label><input id="widthSlider" type="range" min="3" max="18" value="8"></div>
+            <div class="control"><label for="depthSlider">Flow depth <output id="depthOutput">8 blocks</output></label><input id="depthSlider" type="range" min="2" max="16" step="2" value="8"></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="shell research" aria-labelledby="boundary-title">
+      <div class="research-grid">
+        <article class="panel research-card"><div class="kicker">01 · Physics</div><h3>Finite Page benchmark</h3><p>A Haar-random bipartite pure state supplies an exact finite-dimensional expectation for radiation entanglement entropy.</p></article>
+        <article class="panel research-card"><div class="kicker">02 · Statistics</div><h3>Conditional density estimation</h3><p>RealNVP maps Gaussian coordinates to multimodal telemetry while retaining exact sample-wise change-of-variables likelihoods.</p></article>
+        <article class="panel research-card"><div class="kicker">03 · Decryption</div><h3>Paired latent recovery</h3><p>Paired alignment resolves the rotational non-identifiability that maximum likelihood alone cannot remove.</p></article>
+        <article class="panel boundary">
+          <h2 id="boundary-title">What this browser model does—and does not—claim.</h2>
+          <div class="claim"><strong>It does:</strong> expose a finite Page benchmark, animate an analytic telemetry surrogate, distinguish entropy definitions, and demonstrate how paired inverse coordinates can be scored.</div>
+          <div class="claim"><strong>It does not:</strong> run the trained PyTorch model in your browser, identify von Neumann entropy from one classical measurement basis, or prove unitary black-hole evaporation.</div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell"><span>Quantum Radiation Flow Decoder · Salem Morelli</span><span>Normalizing flows · variational inference · quantum information</span></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (id) => document.getElementById(id);
+      const clamp = (x, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
+      const lerp = (a, b, u) => a + (b - a) * u;
+      const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+      const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const state = {
+        time: 0.18,
+        playing: !reduceMotion,
+        speed: 0.055,
+        qubits: 14,
+        scramble: 0.72,
+        width: 0.08,
+        depth: 8,
+        seed: 941,
+        lens: { x: 0.76, y: 0.36, r: 0.115 },
+        draggingLens: false,
+        pulse: 0,
+        lastFrame: performance.now(),
+        particles: [],
+        stars: [],
+        secret: [],
+        recovered: [],
+        lastVectorFidelity: -1,
+        capture: 0,
+        capturedCount: 0,
+        pageCurve: [],
+        pageMax: 1
+      };
+
+      function mulberry32(seed) {
+        return function() {
+          let t = seed += 0x6D2B79F5;
+          t = Math.imul(t ^ t >>> 15, t | 1);
+          t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+      }
+
+      function harmonic(n) {
+        let total = 0;
+        for (let k = 1; k <= n; k += 1) total += 1 / k;
+        return total;
+      }
+
+      function pageEntropyAt(emitted, total) {
+        const r = 2 ** emitted;
+        const b = 2 ** (total - emitted);
+        const m = Math.min(r, b);
+        const n = Math.max(r, b);
+        return harmonic(m * n) - harmonic(n) - (m - 1) / (2 * n);
+      }
+
+      function rebuildPageCurve() {
+        const discrete = [];
+        for (let k = 0; k <= state.qubits; k += 1) discrete.push(pageEntropyAt(k, state.qubits));
+        state.pageCurve = Array.from({ length: 201 }, (_, i) => {
+          const q = (i / 200) * state.qubits;
+          const k = Math.floor(q);
+          return lerp(discrete[k], discrete[Math.min(state.qubits, k + 1)], q - k);
+        });
+        state.pageMax = Math.max(...state.pageCurve, 1e-9);
+      }
+
+      function newSecret() {
+        const random = mulberry32(state.seed * 701 + 17);
+        state.secret = Array.from({ length: 8 }, () => lerp(-1, 1, random()));
+        updateVectorBars();
+      }
+
+      function reseedParticles() {
+        state.seed += 1;
+        const random = mulberry32(state.seed);
+        state.stars = Array.from({ length: 110 }, () => ({ x: random(), y: random(), a: lerp(.16, .8, random()), r: lerp(.45, 1.5, random()) }));
+        state.particles = Array.from({ length: 96 }, (_, i) => ({
+          birth: clamp((i + random() * 2.4) / 98),
+          angle: random() * Math.PI * 2,
+          curve: lerp(-.48, .48, random()),
+          speed: lerp(.72, 1.25, random()),
+          energy: lerp(.25, 1, random()) ** .65,
+          hue: random() < .56 ? "cyan" : random() < .78 ? "amber" : "violet",
+          jitter: random() * 100
+        }));
+        newSecret();
+      }
+
+      const canvas = $("radiationCanvas");
+      const ctx = canvas.getContext("2d");
+      let canvasCssWidth = 1;
+      let canvasCssHeight = 1;
+
+      function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        canvasCssWidth = Math.max(1, rect.width);
+        canvasCssHeight = Math.max(1, rect.height);
+        canvas.width = Math.round(canvasCssWidth * dpr);
+        canvas.height = Math.round(canvasCssHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function particlePosition(p, animatedClock) {
+        const origin = { x: canvasCssWidth * .34, y: canvasCssHeight * .51 };
+        const life = clamp((state.time - p.birth) / Math.max(.08, 1 - p.birth));
+        const phase = life * p.speed;
+        const angle = p.angle + p.curve * phase * 3.4;
+        const maxRadius = Math.hypot(canvasCssWidth, canvasCssHeight) * .64;
+        const radius = 72 + maxRadius * phase;
+        const shimmer = Math.sin(animatedClock * .002 + p.jitter) * 2.2;
+        return { x: origin.x + Math.cos(angle) * radius + shimmer, y: origin.y + Math.sin(angle) * radius * .7 + shimmer, life, energy: p.energy * (1 - .28 * life) };
+      }
+
+      function drawCanvas(now) {
+        const w = canvasCssWidth;
+        const h = canvasCssHeight;
+        ctx.clearRect(0, 0, w, h);
+
+        const bg = ctx.createRadialGradient(w * .34, h * .51, 0, w * .34, h * .51, Math.max(w, h));
+        bg.addColorStop(0, "#0d0b20"); bg.addColorStop(.35, "#080b19"); bg.addColorStop(1, "#040610");
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+        state.stars.forEach((s) => {
+          ctx.globalAlpha = s.a * (.75 + .25 * Math.sin(now * .001 + s.x * 40));
+          ctx.fillStyle = "#cad8ff"; ctx.beginPath(); ctx.arc(s.x * w, s.y * h, s.r, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+        const bx = w * .34, by = h * .51;
+        ctx.save(); ctx.translate(bx, by); ctx.rotate(-.18);
+        ctx.strokeStyle = "rgba(255,195,91,.62)"; ctx.lineWidth = 8; ctx.shadowColor = "rgba(255,195,91,.5)"; ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.ellipse(0, 0, 112, 38, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+        const glow = ctx.createRadialGradient(bx, by, 42, bx, by, 105);
+        glow.addColorStop(0, "rgba(0,0,0,1)"); glow.addColorStop(.48, "rgba(0,0,0,1)"); glow.addColorStop(.64, "rgba(126,74,255,.38)"); glow.addColorStop(1, "rgba(126,74,255,0)");
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(bx, by, 105, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(bx, by, 61, 0, Math.PI * 2); ctx.fill();
+
+        const lx = state.lens.x * w, ly = state.lens.y * h;
+        const lensRadius = state.lens.r * Math.min(w, h) * (1 + state.pulse * .18);
+        let count = 0, signal = 0, available = 0;
+        const colors = { cyan: "102,227,255", amber: "255,195,91", violet: "154,117,255" };
+        const visibleParticles = [];
+        state.particles.forEach((p) => {
+          if (p.birth > state.time) return;
+          const pos = particlePosition(p, now);
+          if (pos.x < -20 || pos.x > w + 20 || pos.y < -20 || pos.y > h + 20) return;
+          const dist = Math.hypot(pos.x - lx, pos.y - ly);
+          const inside = dist < lensRadius;
+          available += pos.energy;
+          if (inside) { count += 1; signal += pos.energy * (1 - .45 * dist / lensRadius); }
+          visibleParticles.push({ p, pos, inside });
+        });
+
+        state.capture = clamp(signal / Math.max(2.2, Math.sqrt(Math.max(available, .01)) * .85));
+        state.capturedCount = count;
+
+        visibleParticles.forEach(({ p, pos, inside }) => {
+          const rgb = colors[p.hue];
+          const radius = lerp(1.6, 4.7, pos.energy) * (inside ? 1.45 : 1);
+          ctx.fillStyle = `rgba(${rgb},${inside ? .98 : .7})`;
+          ctx.shadowColor = `rgba(${rgb},${inside ? .95 : .5})`; ctx.shadowBlur = inside ? 18 : 8;
+          ctx.beginPath(); ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+
+        const lensFill = ctx.createRadialGradient(lx - lensRadius * .2, ly - lensRadius * .25, 0, lx, ly, lensRadius);
+        lensFill.addColorStop(0, "rgba(102,227,255,.14)"); lensFill.addColorStop(.72, "rgba(25,45,72,.2)"); lensFill.addColorStop(1, "rgba(102,227,255,.06)");
+        ctx.fillStyle = lensFill; ctx.beginPath(); ctx.arc(lx, ly, lensRadius, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "rgba(102,227,255,.95)"; ctx.lineWidth = state.draggingLens ? 3 : 2; ctx.shadowColor = "rgba(102,227,255,.65)"; ctx.shadowBlur = state.draggingLens ? 22 : 12;
+        ctx.beginPath(); ctx.arc(lx, ly, lensRadius, 0, Math.PI * 2); ctx.stroke(); ctx.shadowBlur = 0;
+        ctx.strokeStyle = "rgba(102,227,255,.35)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(lx - 8, ly); ctx.lineTo(lx + 8, ly); ctx.moveTo(lx, ly - 8); ctx.lineTo(lx, ly + 8); ctx.stroke();
+      }
+
+      function pageAt(t) {
+        const q = clamp(t) * (state.pageCurve.length - 1);
+        const i = Math.floor(q);
+        return lerp(state.pageCurve[i], state.pageCurve[Math.min(state.pageCurve.length - 1, i + 1)], q - i);
+      }
+
+      function flowAt(t) {
+        const multiModal = .9 + 1.1 * Math.sin(Math.PI * t) ** 2;
+        const conditional = 2.6 + 4.8 * Math.sin(Math.PI * clamp(t * .9 + .06)) ** 1.35;
+        return conditional + multiModal * state.scramble + .12 * state.depth;
+      }
+
+      function baseFidelityAt(t) {
+        const visibility = sigmoid((t - .5) / state.width);
+        return .25 + .75 * visibility ** 1.35;
+      }
+
+      function currentFidelity() {
+        const base = baseFidelityAt(state.time);
+        const access = .12 + .88 * state.capture;
+        return .25 + (base - .25) * access;
+      }
+
+      function massAt(t) { return Math.max(.08, (1 - clamp(t)) ** (1 / 3)); }
+
+      function updateVectorBars() {
+        if (!state.secret.length) return;
+        const f = currentFidelity();
+        if (Math.abs(f - state.lastVectorFidelity) < .002 && $("vectorBars").children.length) return;
+        state.lastVectorFidelity = f;
+        const random = mulberry32(state.seed * 53 + 3);
+        state.recovered = state.secret.map((s, i) => {
+          const perm = state.secret[(i + 3) % state.secret.length];
+          const noise = lerp(-1, 1, random());
+          return clamp(f * s + (1 - f) * (.62 * perm + .38 * noise), -1, 1);
+        });
+        const root = $("vectorBars");
+        root.innerHTML = "";
+        state.secret.forEach((s, i) => {
+          const pair = document.createElement("div"); pair.className = "vector-pair";
+          const a = document.createElement("span"); a.className = "bar secret"; a.style.height = `${18 + Math.abs(s) * 82}%`; a.title = `Secret ${i + 1}: ${s.toFixed(3)}`;
+          const b = document.createElement("span"); b.className = "bar recovered"; b.style.height = `${18 + Math.abs(state.recovered[i]) * 82}%`; b.title = `Recovered ${i + 1}: ${state.recovered[i].toFixed(3)}`;
+          pair.append(a, b); root.append(pair);
+        });
+      }
+
+      function pathFrom(values, mapper) {
+        return values.map((v, i) => `${i ? "L" : "M"}${(42 + i / (values.length - 1) * 816).toFixed(2)},${mapper(v).toFixed(2)}`).join(" ");
+      }
+
+      function rebuildChart() {
+        const ys = (norm) => 242 - clamp(norm) * 214;
+        const pageNorm = state.pageCurve.map((x) => x / state.pageMax);
+        const flowValues = Array.from({ length: 201 }, (_, i) => flowAt(i / 200));
+        const flowMin = Math.min(...flowValues), flowMax = Math.max(...flowValues);
+        const flowNorm = flowValues.map((x) => (x - flowMin) / Math.max(.001, flowMax - flowMin));
+        const fidelityNorm = Array.from({ length: 201 }, (_, i) => baseFidelityAt(i / 200));
+        const pagePath = pathFrom(pageNorm, ys);
+        $("pathPage").setAttribute("d", pagePath);
+        $("areaPage").setAttribute("d", `${pagePath} L858,242 L42,242 Z`);
+        $("pathFlow").setAttribute("d", pathFrom(flowNorm, ys));
+        $("pathFidelity").setAttribute("d", pathFrom(fidelityNorm, ys));
+        const grid = $("gridLines"); grid.innerHTML = "";
+        [28, 81.5, 135, 188.5, 242].forEach((y) => { const line = document.createElementNS("http://www.w3.org/2000/svg", "line"); line.setAttribute("x1", "42"); line.setAttribute("x2", "858"); line.setAttribute("y1", y); line.setAttribute("y2", y); line.setAttribute("stroke", "rgba(157,169,211,.14)"); grid.append(line); });
+        [42, 246, 450, 654, 858].forEach((x) => { const line = document.createElementNS("http://www.w3.org/2000/svg", "line"); line.setAttribute("x1", x); line.setAttribute("x2", x); line.setAttribute("y1", "28"); line.setAttribute("y2", "242"); line.setAttribute("stroke", "rgba(157,169,211,.08)"); grid.append(line); });
+      }
+
+      function updateChartCursor() {
+        const x = 42 + 816 * state.time;
+        const pageY = 242 - pageAt(state.time) / state.pageMax * 214;
+        const flowValues = Array.from({ length: 101 }, (_, i) => flowAt(i / 100));
+        const fmin = Math.min(...flowValues), fmax = Math.max(...flowValues);
+        const flowY = 242 - (flowAt(state.time) - fmin) / Math.max(.001, fmax - fmin) * 214;
+        const fidY = 242 - baseFidelityAt(state.time) * 214;
+        $("curveCursor").setAttribute("x1", x); $("curveCursor").setAttribute("x2", x);
+        [["dotPage", pageY], ["dotFlow", flowY], ["dotFidelity", fidY]].forEach(([id, y]) => { $(id).setAttribute("cx", x); $(id).setAttribute("cy", y); });
+      }
+
+      function updateReadouts() {
+        const page = pageAt(state.time);
+        const flow = flowAt(state.time);
+        const fidelity = currentFidelity();
+        $("timeSlider").value = Math.round(state.time * 1000);
+        $("timeOutput").textContent = state.time.toFixed(3);
+        $("metricTime").textContent = state.time.toFixed(3);
+        $("metricMass").textContent = massAt(state.time).toFixed(3);
+        $("metricPage").textContent = page.toFixed(3);
+        $("metricFlow").textContent = flow.toFixed(3);
+        $("metricFidelity").textContent = fidelity.toFixed(3);
+        $("metricPackets").textContent = String(state.capturedCount);
+        $("decoderScore").textContent = fidelity.toFixed(3);
+        $("qualityValue").textContent = `${Math.round(state.capture * 100)}%`;
+        $("qualityRing").style.setProperty("--quality", `${state.capture * 360}deg`);
+        $("playButton").textContent = state.playing ? "Ⅱ" : "▶";
+        $("playButton").setAttribute("aria-label", state.playing ? "Pause evaporation" : "Play evaporation");
+        $("heroPlay").textContent = state.playing ? "Ⅱ Pause evaporation" : "▶ Start evaporation";
+        $("runState").textContent = state.playing ? "Simulation running" : "Simulation paused";
+        $("qubitOutput").textContent = state.qubits;
+        $("scrambleOutput").textContent = state.scramble.toFixed(2);
+        $("widthOutput").textContent = state.width.toFixed(3);
+        $("depthOutput").textContent = `${state.depth} blocks`;
+
+        if (state.capturedCount === 0) { $("captureTitle").textContent = "Scan the radiation field"; $("captureText").textContent = "Move the lens over visible packets or use Find strongest signal."; }
+        else if (state.capture < .45) { $("captureTitle").textContent = `${state.capturedCount} packets partially resolved`; $("captureText").textContent = "Center the lens on brighter packets to raise accessible telemetry."; }
+        else { $("captureTitle").textContent = `${state.capturedCount} packets strongly resolved`; $("captureText").textContent = "Signal overlap is contributing to the paired decoder score."; }
+
+        if (state.time < .43) { $("regimeTitle").textContent = "Pre-Page accumulation"; $("regimeText").textContent = "The radiation subsystem is smaller than the remaining black-hole subsystem. Expected entanglement rises as packets are emitted."; }
+        else if (state.time < .58) { $("regimeTitle").textContent = "Page-time crossover"; $("regimeText").textContent = "The subsystem dimensions are comparable. The finite Page expectation reaches its maximum while decoder visibility begins to turn on."; }
+        else { $("regimeTitle").textContent = "Post-Page recovery regime"; $("regimeText").textContent = "The remaining black-hole subsystem is smaller. Unitary benchmark entropy declines while accessible decoder information may increase."; }
+        document.querySelectorAll(".preset").forEach((b) => b.setAttribute("aria-pressed", Math.abs(Number(b.dataset.time) - state.time) < .025 ? "true" : "false"));
+        updateChartCursor();
+        updateVectorBars();
+      }
+
+      function setTime(t, pause = true) {
+        state.time = clamp(t);
+        if (pause) state.playing = false;
+        updateReadouts();
+      }
+
+      function toast(message) {
+        const node = $("toast"); node.textContent = message; node.classList.add("show"); clearTimeout(toast.timer); toast.timer = setTimeout(() => node.classList.remove("show"), 1800);
+      }
+
+      function setLensFromEvent(event) {
+        const rect = canvas.getBoundingClientRect();
+        state.lens.x = clamp((event.clientX - rect.left) / rect.width, .04, .96);
+        state.lens.y = clamp((event.clientY - rect.top) / rect.height, .06, .94);
+      }
+
+      canvas.addEventListener("pointerdown", (event) => { state.draggingLens = true; canvas.classList.add("dragging"); canvas.setPointerCapture(event.pointerId); setLensFromEvent(event); });
+      canvas.addEventListener("pointermove", (event) => { if (state.draggingLens) setLensFromEvent(event); });
+      canvas.addEventListener("pointerup", (event) => { state.draggingLens = false; canvas.classList.remove("dragging"); canvas.releasePointerCapture(event.pointerId); });
+      canvas.addEventListener("pointercancel", () => { state.draggingLens = false; canvas.classList.remove("dragging"); });
+      canvas.addEventListener("keydown", (event) => {
+        const delta = event.shiftKey ? .05 : .018;
+        if (event.key === "ArrowLeft") state.lens.x -= delta;
+        else if (event.key === "ArrowRight") state.lens.x += delta;
+        else if (event.key === "ArrowUp") state.lens.y -= delta;
+        else if (event.key === "ArrowDown") state.lens.y += delta;
+        else if (event.key === " ") { state.playing = !state.playing; event.preventDefault(); return; }
+        else return;
+        state.lens.x = clamp(state.lens.x, .04, .96); state.lens.y = clamp(state.lens.y, .06, .94); event.preventDefault();
+      });
+
+      function togglePlay() { state.playing = !state.playing; if (state.time >= .999 && state.playing) state.time = 0; updateReadouts(); }
+      $("playButton").addEventListener("click", togglePlay);
+      $("heroPlay").addEventListener("click", () => { togglePlay(); $("laboratory").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" }); });
+      $("resetButton").addEventListener("click", () => { state.time = 0; state.playing = false; state.lens = { x: .76, y: .36, r: .115 }; updateReadouts(); toast("Laboratory reset"); });
+      $("timeSlider").addEventListener("input", (event) => setTime(Number(event.target.value) / 1000));
+      document.querySelectorAll(".preset").forEach((b) => b.addEventListener("click", () => setTime(Number(b.dataset.time))));
+      $("jumpPageButton").addEventListener("click", () => setTime(.5));
+      $("secretButton").addEventListener("click", () => { state.seed += 31; newSecret(); toast("New paired toy state generated"); });
+      $("reseedButton").addEventListener("click", () => { reseedParticles(); toast("Radiation field reseeded"); });
+      $("assistButton").addEventListener("click", () => {
+        let best = null;
+        state.particles.forEach((p) => { if (p.birth > state.time) return; const pos = particlePosition(p, performance.now()); if (pos.x < 0 || pos.x > canvasCssWidth || pos.y < 0 || pos.y > canvasCssHeight) return; const score = pos.energy; if (!best || score > best.score) best = { score, pos }; });
+        if (best) { state.lens.x = clamp(best.pos.x / canvasCssWidth); state.lens.y = clamp(best.pos.y / canvasCssHeight); toast("Lens aligned with strongest visible packet"); }
+        else { setTime(.35, false); toast("Timeline advanced to first accessible packets"); }
+      });
+      $("pulseButton").addEventListener("click", () => { state.pulse = 1; setTimeout(() => { state.pulse = 0; }, 420); toast(state.capturedCount ? `Decode pulse measured ${state.capturedCount} packets` : "No packet overlap—move the lens first"); });
+
+      $("qubitSelect").addEventListener("change", (event) => { state.qubits = Number(event.target.value); rebuildPageCurve(); rebuildChart(); updateReadouts(); });
+      $("scrambleSlider").addEventListener("input", (event) => { state.scramble = Number(event.target.value) / 100; rebuildChart(); updateReadouts(); });
+      $("widthSlider").addEventListener("input", (event) => { state.width = Number(event.target.value) / 100; rebuildChart(); updateReadouts(); });
+      $("depthSlider").addEventListener("input", (event) => { state.depth = Number(event.target.value); rebuildChart(); updateReadouts(); });
+
+      const curveSvg = $("curveSvg");
+      let scrubbingChart = false;
+      function chartTime(event) { const rect = curveSvg.getBoundingClientRect(); return clamp(((event.clientX - rect.left) / rect.width * 900 - 42) / 816); }
+      curveSvg.addEventListener("pointerdown", (event) => { scrubbingChart = true; curveSvg.setPointerCapture(event.pointerId); setTime(chartTime(event)); });
+      curveSvg.addEventListener("pointermove", (event) => { if (scrubbingChart) setTime(chartTime(event)); });
+      curveSvg.addEventListener("pointerup", (event) => { scrubbingChart = false; curveSvg.releasePointerCapture(event.pointerId); });
+
+      function frame(now) {
+        const dt = Math.min(.05, (now - state.lastFrame) / 1000); state.lastFrame = now;
+        if (state.playing) { state.time += dt * state.speed; if (state.time >= 1) { state.time = 1; state.playing = false; toast("Evaporation endpoint reached"); } }
+        drawCanvas(now); updateReadouts(); requestAnimationFrame(frame);
+      }
+
+      window.addEventListener("resize", resizeCanvas);
+      reseedParticles(); rebuildPageCurve(); resizeCanvas(); rebuildChart(); updateReadouts(); requestAnimationFrame(frame);
+    })();
+  </script>
 </body>
 </html>

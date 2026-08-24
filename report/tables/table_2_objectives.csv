@@ -1,0 +1,5 @@
+Objective,Expression,Identifies
+Maximum likelihood,-E_p log q,Outcome density
+Reverse KL,E_q(log q-log p),Variational approximation
+Alignment,E||f^-1(x)-y||^2,Latent orientation
+Born likelihood,-sum log Tr(rho E_x),Density operator with complete data

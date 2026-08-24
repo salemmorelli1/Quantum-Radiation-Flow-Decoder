@@ -1,0 +1,6 @@
+Threat,Failure signature,Mitigation
+Latent rotation,"good likelihood, poor fidelity",paired anchors
+Reverse-KL mode seeking,missing radiation modes,forward-KL data fit
+Jacobian stiffness,exploding log determinants,scale clipping
+Temporal aliasing,averaged snapshots,time-mass conditioning
+Incomplete POVM,unidentified phase,multiple bases or IC POVM

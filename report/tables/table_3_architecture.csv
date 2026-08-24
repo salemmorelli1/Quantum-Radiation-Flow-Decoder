@@ -1,0 +1,6 @@
+Component,Baseline,Safeguard
+Condition,time and stopped mass,bounded normalized inputs
+Flow,8 affine coupling blocks,alternating masks
+Conditioner,2x128 SiLU MLP,zero final initialization
+Scale,clip=1.5,tanh bounded log-scale
+Arithmetic,float64,finite-value checks

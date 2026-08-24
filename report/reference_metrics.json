@@ -1,0 +1,11 @@
+{
+  "total_qubits": 10,
+  "page_peak_time": 0.5,
+  "page_peak_entropy_nats": 2.9663054768416135,
+  "pre_page_fidelity_floor": 0.25000121161175576,
+  "page_time_fidelity_surrogate": 0.4375,
+  "late_fidelity_surrogate": 0.9928101849069907,
+  "telemetry_entropy_min": 11.273624597175651,
+  "telemetry_entropy_max": 12.065251410703011,
+  "seed_status": "deterministic analytic benchmark"
+}

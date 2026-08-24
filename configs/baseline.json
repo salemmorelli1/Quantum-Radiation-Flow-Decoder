@@ -1,0 +1,34 @@
+{
+  "physics": {
+    "total_qubits": 10,
+    "data_dim": 8,
+    "page_time": 0.5,
+    "visibility_width": 0.075,
+    "initial_mass": 1.0,
+    "mass_floor": 0.08,
+    "target_layers": 4,
+    "target_hidden_dim": 64,
+    "target_scale_clip": 0.8
+  },
+  "flow": {
+    "data_dim": 8,
+    "condition_dim": 2,
+    "context_dim": 32,
+    "hidden_dim": 128,
+    "num_layers": 8,
+    "scale_clip": 1.5
+  },
+  "training": {
+    "steps": 1200,
+    "batch_size": 256,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.000001,
+    "alignment_weight": 0.2,
+    "gradient_clip": 5.0,
+    "evaluation_times": 21,
+    "evaluation_samples": 1024,
+    "seed": 20260824,
+    "dtype": "float64",
+    "device": "cpu"
+  }
+}

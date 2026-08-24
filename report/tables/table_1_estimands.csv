@@ -1,0 +1,6 @@
+Object,Definition,Role
+Radiation state,rho_R=Tr_B |Psi><Psi|,Quantum state
+Page entropy,-Tr rho_R log rho_R,Quantum benchmark
+Flow density,"q_theta(x|t,M)",Classical telemetry
+Flow entropy,-E_q log q_theta,Classical uncertainty
+Fidelity,|<psi_hat|psi>|^2,Paired recovery

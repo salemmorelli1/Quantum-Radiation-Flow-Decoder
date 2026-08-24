@@ -1,0 +1,6 @@
+Claim,Primary metric,Decision rule
+Density adequacy,held-out forward KL,upper CI below tolerance
+Numerical inversion,round-trip max error,below 1e-8 in float64
+Entropy precision,MC standard error,below preregistered width
+Post-Page recovery,paired fidelity gain,CI above unconditioned baseline
+Page behavior,von Neumann estimator,not inferred from h(q) alone

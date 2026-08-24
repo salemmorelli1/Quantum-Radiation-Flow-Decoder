@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quantum-radiation-flow"
+version = "0.1.0"
+description = "Conditional normalizing flows for statistically auditable toy models of black-hole information recovery"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Salem Morelli"}]
+keywords = ["black holes", "normalizing flows", "variational inference", "Page curve", "PyTorch"]
+dependencies = ["torch>=2.2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.8", "mypy>=1.11"]
+plots = ["matplotlib>=3.8"]
+report = ["matplotlib>=3.8", "numpy>=1.26", "python-docx>=1.1"]
+
+[project.scripts]
+quantum-radiation-flow = "quantum_radiation_flow.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+quantum_radiation_flow = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["report/build_report.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["quantum_radiation_flow"]

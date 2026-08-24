@@ -76,7 +76,7 @@ class AffineCoupling(nn.Module):
         nn.init.zeros_(final.weight)
         nn.init.zeros_(final.bias)
 
-    def _parameters(self, fixed: Tensor, context: Tensor) -> tuple[Tensor, Tensor]:
+    def _coupling_parameters(self, fixed: Tensor, context: Tensor) -> tuple[Tensor, Tensor]:
         raw_scale, shift = self.conditioner(torch.cat((fixed, context), dim=-1)).chunk(2, dim=-1)
         active = 1.0 - self.mask
         log_scale = self.scale_clip * torch.tanh(raw_scale / self.scale_clip) * active
@@ -85,13 +85,13 @@ class AffineCoupling(nn.Module):
 
     def forward(self, value: Tensor, context: Tensor) -> TransformResult:
         fixed = value * self.mask
-        log_scale, shift = self._parameters(fixed, context)
+        log_scale, shift = self._coupling_parameters(fixed, context)
         transformed = fixed + (1.0 - self.mask) * (value * log_scale.exp() + shift)
         return TransformResult(transformed, log_scale.sum(dim=-1))
 
     def inverse(self, value: Tensor, context: Tensor) -> TransformResult:
         fixed = value * self.mask
-        log_scale, shift = self._parameters(fixed, context)
+        log_scale, shift = self._coupling_parameters(fixed, context)
         transformed = fixed + (1.0 - self.mask) * ((value - shift) * (-log_scale).exp())
         return TransformResult(transformed, -log_scale.sum(dim=-1))
 

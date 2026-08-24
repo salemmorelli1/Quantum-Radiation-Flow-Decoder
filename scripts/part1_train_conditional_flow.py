@@ -9,7 +9,6 @@ from quantum_radiation_flow.flow import ConditionalRealNVP
 from quantum_radiation_flow.target import ReferenceRadiationModel
 from quantum_radiation_flow.training import train_conditional_flow
 
-
 config = ExperimentConfig.from_mapping(
     json.loads(Path("configs/baseline.json").read_text(encoding="utf-8"))
 )

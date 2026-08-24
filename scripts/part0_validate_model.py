@@ -9,7 +9,6 @@ import torch
 from quantum_radiation_flow.config import ExperimentConfig
 from quantum_radiation_flow.flow import ConditionalRealNVP
 
-
 payload = json.loads(Path("configs/baseline.json").read_text(encoding="utf-8"))
 config = ExperimentConfig.from_mapping(payload)
 torch.set_default_dtype(torch.float64)

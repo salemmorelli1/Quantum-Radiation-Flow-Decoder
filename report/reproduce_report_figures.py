@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
-
 ROOT = Path(__file__).resolve().parent
 FIGURES = ROOT / "figures"
 TABLES = ROOT / "tables"

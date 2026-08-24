@@ -8,7 +8,6 @@ from quantum_radiation_flow.flow import ConditionalRealNVP
 from quantum_radiation_flow.quantum import complex_state_from_real_coordinates, pure_state_fidelity
 from quantum_radiation_flow.target import ReferenceRadiationModel
 
-
 torch.set_default_dtype(torch.float64)
 physics = PhysicsConfig()
 target = ReferenceRadiationModel(physics)

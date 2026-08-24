@@ -10,7 +10,6 @@ from torch import Tensor, nn
 
 from .config import FlowConfig
 
-
 LOG_2PI = math.log(2.0 * math.pi)
 
 

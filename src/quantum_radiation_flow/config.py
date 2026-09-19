@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass
 from typing import Any
 
@@ -21,6 +22,15 @@ class PhysicsConfig:
     target_scale_clip: float = 0.8
 
     def validate(self) -> None:
+        for name, value in (
+            ("page_time", self.page_time),
+            ("visibility_width", self.visibility_width),
+            ("initial_mass", self.initial_mass),
+            ("mass_floor", self.mass_floor),
+            ("target_scale_clip", self.target_scale_clip),
+        ):
+            if not math.isfinite(value):
+                raise ValueError(f"{name} must be finite")
         if self.total_qubits < 2:
             raise ValueError("total_qubits must be at least 2")
         if self.data_dim < 2 or self.data_dim % 2:
@@ -45,6 +55,8 @@ class FlowConfig:
     scale_clip: float = 1.5
 
     def validate(self) -> None:
+        if not math.isfinite(self.scale_clip):
+            raise ValueError("scale_clip must be finite")
         if self.data_dim < 2:
             raise ValueError("data_dim must be at least 2")
         if self.condition_dim < 1 or self.context_dim < 2:
@@ -72,6 +84,14 @@ class TrainingConfig:
     device: str = "cpu"
 
     def validate(self) -> None:
+        for name, value in (
+            ("learning_rate", self.learning_rate),
+            ("weight_decay", self.weight_decay),
+            ("alignment_weight", self.alignment_weight),
+            ("gradient_clip", self.gradient_clip),
+        ):
+            if not math.isfinite(value):
+                raise ValueError(f"{name} must be finite")
         if self.steps < 1 or self.batch_size < 2:
             raise ValueError("steps and batch_size must be positive")
         if self.learning_rate <= 0.0 or self.weight_decay < 0.0:

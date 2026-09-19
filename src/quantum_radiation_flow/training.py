@@ -99,7 +99,13 @@ def reverse_kl_objective(
 ) -> Tensor:
     """Monte Carlo variational free energy E_q[log q - log p]."""
 
+    if condition.ndim == 1:
+        condition = condition.unsqueeze(0)
+    if condition.ndim != 2 or condition.shape[-1] != model.config.condition_dim:
+        raise ValueError("condition must have shape [1 or sample_count, condition_dim]")
+    if condition.shape[0] not in {1, sample_count}:
+        raise ValueError("condition batch must be one or sample_count")
     observation, log_q = model.sample(sample_count, condition, generator=generator)
-    expanded = condition.reshape(1, -1).expand(sample_count, -1)
+    expanded = condition.expand(sample_count, -1) if condition.shape[0] == 1 else condition
     log_p = target.log_prob(observation, expanded)
     return (log_q - log_p).mean()

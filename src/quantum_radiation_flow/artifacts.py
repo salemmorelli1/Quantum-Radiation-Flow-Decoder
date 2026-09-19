@@ -13,7 +13,10 @@ def write_json(path: str | Path, payload: dict[str, Any]) -> Path:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.write_text(
+        json.dumps(payload, allow_nan=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     temporary.replace(destination)
     return destination
 

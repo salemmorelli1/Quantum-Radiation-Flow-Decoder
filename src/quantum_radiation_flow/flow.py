@@ -212,6 +212,8 @@ class ConditionalRealNVP(nn.Module):
         estimated unless the transformation admits a closed-form expectation.
         """
 
+        if sample_count < 2:
+            raise ValueError("at least two samples are required for an entropy standard error")
         _, log_prob = self.sample(sample_count, condition, generator=generator)
         values = -log_prob
         estimate = values.mean()

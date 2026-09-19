@@ -13,10 +13,24 @@ def _safe_entropy(probabilities: Tensor, *, epsilon: float = 1.0e-15) -> Tensor:
     return -(probabilities * probabilities.log()).sum(dim=-1)
 
 
+def _normalize_state(state: Tensor, *, epsilon: float = 1.0e-15) -> Tensor:
+    if state.ndim < 1:
+        raise ValueError("state must have at least one dimension")
+    finite = torch.isfinite(state.real)
+    if torch.is_complex(state):
+        finite = finite & torch.isfinite(state.imag)
+    if not finite.all():
+        raise ValueError("state must contain only finite values")
+    norm = state.norm(dim=-1, keepdim=True)
+    if torch.any(norm <= epsilon):
+        raise ValueError("state norm must be positive")
+    return state / norm
+
+
 def density_matrix(state: Tensor) -> Tensor:
     """Return |psi><psi| for normalized batched complex state vectors."""
 
-    state = state / state.norm(dim=-1, keepdim=True).clamp_min(1.0e-15)
+    state = _normalize_state(state)
     return state.unsqueeze(-1) * state.conj().unsqueeze(-2)
 
 
@@ -28,8 +42,13 @@ def radiation_density_matrix(
     """Trace a pure bipartite state over the black-hole factor."""
 
     expected = black_hole_dimension * radiation_dimension
+    if black_hole_dimension < 1 or radiation_dimension < 1:
+        raise ValueError("subsystem dimensions must be positive")
+    if state.ndim < 1:
+        raise ValueError("state must have at least one dimension")
     if state.shape[-1] != expected:
         raise ValueError(f"state dimension must be {expected}")
+    state = _normalize_state(state)
     psi = state.reshape(*state.shape[:-1], black_hole_dimension, radiation_dimension)
     return torch.einsum("...br,...bs->...rs", psi, psi.conj())
 
@@ -110,13 +129,15 @@ def complex_state_from_real_coordinates(coordinates: Tensor) -> Tensor:
         raise ValueError("the final coordinate dimension must be even")
     half = coordinates.shape[-1] // 2
     state = torch.complex(coordinates[..., :half], coordinates[..., half:])
-    return state / state.norm(dim=-1, keepdim=True).clamp_min(1.0e-15)
+    return _normalize_state(state)
 
 
 def pure_state_fidelity(state_a: Tensor, state_b: Tensor) -> Tensor:
     """Return |<a|b>|^2 for batches of normalized pure states."""
 
-    state_a = state_a / state_a.norm(dim=-1, keepdim=True).clamp_min(1.0e-15)
-    state_b = state_b / state_b.norm(dim=-1, keepdim=True).clamp_min(1.0e-15)
+    if state_a.shape[-1] != state_b.shape[-1]:
+        raise ValueError("states must have the same final dimension")
+    state_a = _normalize_state(state_a)
+    state_b = _normalize_state(state_b)
     overlap = (state_a.conj() * state_b).sum(dim=-1)
     return overlap.abs().square().real.clamp(0.0, 1.0)

@@ -66,6 +66,16 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev,report]"
 ```
 
+For an environment that matches the GitHub verification matrix, install the
+audited CI lock first and then install this package without re-resolving its
+dependencies:
+
+```bash
+python -m pip install --disable-pip-version-check -r requirements-ci-lock.txt
+python -m pip install --disable-pip-version-check --no-deps -e .
+python -m pip check
+```
+
 ## Run the research pipeline
 
 ```bash
@@ -90,7 +100,7 @@ The run writes:
 ```bash
 python -m pytest
 python -m ruff check .
-python -m compileall src tests scripts
+python -m compileall src tests scripts report
 ```
 
 The tests verify exact forward/inverse round trips, Jacobian cancellation,

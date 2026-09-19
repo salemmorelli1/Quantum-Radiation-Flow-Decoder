@@ -63,8 +63,16 @@ class ReferenceRadiationModel(nn.Module):
         return torch.sigmoid((time - self.physics.page_time) / self.physics.visibility_width)
 
     def condition(self, time: Tensor) -> Tensor:
+        if time.ndim == 0:
+            time = time.reshape(1, 1)
         if time.ndim == 1:
             time = time.unsqueeze(-1)
+        if time.ndim != 2 or time.shape[-1] != 1:
+            raise ValueError("time must have shape [batch, 1]")
+        if not torch.isfinite(time).all():
+            raise ValueError("time must contain only finite values")
+        if torch.any((time < 0.0) | (time > 1.0)):
+            raise ValueError("time must lie in [0, 1]")
         mass = mass_schedule(
             time,
             initial_mass=self.physics.initial_mass,

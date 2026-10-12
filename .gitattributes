@@ -1,9 +1,5 @@
-* text=auto
-*.py text eol=lf
-*.md text eol=lf
-*.html text eol=lf
-*.toml text eol=lf
-*.yml text eol=lf
-*.json text eol=lf
+* text=auto eol=lf
+*.png binary
 *.pdf binary
 *.docx binary
+*.pt binary

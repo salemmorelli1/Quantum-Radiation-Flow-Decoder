@@ -18,6 +18,10 @@ class CurveDiagnostic:
 def curve_diagnostic(times: Sequence[float], values: Sequence[float]) -> CurveDiagnostic:
     if len(times) != len(values) or len(times) < 3:
         raise ValueError("times and values must have the same length of at least three")
+    if not all(math.isfinite(value) for value in (*times, *values)):
+        raise ValueError("times and values must be finite")
+    if any(b <= a for a, b in zip(times[:-1], times[1:], strict=True)):
+        raise ValueError("times must be strictly increasing")
     peak_index = max(range(len(values)), key=lambda index: values[index])
     pre = sum(values[i + 1] < values[i] for i in range(peak_index))
     post = sum(values[i + 1] > values[i] for i in range(peak_index, len(values) - 1))
@@ -32,6 +36,8 @@ def curve_diagnostic(times: Sequence[float], values: Sequence[float]) -> CurveDi
 def monte_carlo_standard_error(values: Sequence[float]) -> float:
     if len(values) < 2:
         raise ValueError("at least two values are required")
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("values must be finite")
     mean = math.fsum(values) / len(values)
     variance = math.fsum((value - mean) ** 2 for value in values) / (len(values) - 1)
     return math.sqrt(variance / len(values))

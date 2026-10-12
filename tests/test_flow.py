@@ -11,9 +11,7 @@ from quantum_radiation_flow.training import train_conditional_flow
 def test_flow_round_trip_and_jacobian_cancellation() -> None:
     torch.set_default_dtype(torch.float64)
     torch.manual_seed(7)
-    model = ConditionalRealNVP(
-        FlowConfig(data_dim=6, hidden_dim=32, context_dim=12, num_layers=4)
-    )
+    model = ConditionalRealNVP(FlowConfig(data_dim=6, hidden_dim=32, context_dim=12, num_layers=4))
     latent = torch.randn(24, 6)
     condition = torch.rand(24, 2)
     forward = model.decode(latent, condition)
@@ -50,9 +48,7 @@ def test_short_training_pass_updates_parameters() -> None:
         ),
         seed=13,
     )
-    model = ConditionalRealNVP(
-        FlowConfig(data_dim=4, hidden_dim=24, context_dim=12, num_layers=2)
-    )
+    model = ConditionalRealNVP(FlowConfig(data_dim=4, hidden_dim=24, context_dim=12, num_layers=2))
     before = [parameter.detach().clone() for parameter in model.parameters()]
     history = train_conditional_flow(
         model,
@@ -67,6 +63,5 @@ def test_short_training_pass_updates_parameters() -> None:
     )
     assert history[-1].step == 3
     assert any(
-        not torch.equal(old, new)
-        for old, new in zip(before, model.parameters(), strict=True)
+        not torch.equal(old, new) for old, new in zip(before, model.parameters(), strict=True)
     )

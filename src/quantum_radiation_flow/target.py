@@ -10,6 +10,7 @@ from torch import Tensor, nn
 from .config import FlowConfig, PhysicsConfig
 from .flow import ConditionalRealNVP, standard_normal_log_prob
 from .quantum import mass_schedule
+from .validation import sample_count
 
 
 @dataclass(frozen=True)
@@ -44,7 +45,7 @@ class ReferenceRadiationModel(nn.Module):
             scale_clip=physics.target_scale_clip,
         )
         with torch.random.fork_rng(devices=[]):
-            torch.manual_seed(seed)
+            torch.default_generator.manual_seed(seed)
             self.scrambler = ConditionalRealNVP(target_config)
             self._randomize_target()
         self.scrambler.requires_grad_(False)
@@ -60,6 +61,9 @@ class ReferenceRadiationModel(nn.Module):
                     parameter.normal_(mean=0.0, std=0.025)
 
     def visibility(self, time: Tensor) -> Tensor:
+        # Validate the same public domain as condition(), without silently
+        # extending the experiment to arbitrary or non-finite times.
+        self.condition(time)
         return torch.sigmoid((time - self.physics.page_time) / self.physics.visibility_width)
 
     def condition(self, time: Tensor) -> Tensor:
@@ -90,8 +94,7 @@ class ReferenceRadiationModel(nn.Module):
         device: torch.device | str = "cpu",
         dtype: torch.dtype = torch.float64,
     ) -> RadiationBatch:
-        if batch_size < 1:
-            raise ValueError("batch_size must be positive")
+        sample_count(batch_size)
         if time is None:
             time = torch.rand(batch_size, 1, generator=generator, device=device, dtype=dtype)
         else:

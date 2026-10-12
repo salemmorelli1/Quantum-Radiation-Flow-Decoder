@@ -7,5 +7,5 @@
   "late_fidelity_surrogate": 0.9928101849069907,
   "telemetry_entropy_min": 11.273624597175651,
   "telemetry_entropy_max": 12.065251410703011,
-  "seed_status": "deterministic analytic benchmark"
+  "seed_status": "analytic Page benchmark; illustrative entropy and fidelity proxies"
 }

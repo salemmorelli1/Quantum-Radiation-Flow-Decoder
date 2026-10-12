@@ -7,6 +7,16 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 
+def _integer(name: str, value: int, minimum: int) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise ValueError(f"{name} must be an integer of at least {minimum}")
+
+
+def _finite(name: str, value: float) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError(f"{name} must be finite and numeric")
+
+
 @dataclass(frozen=True)
 class PhysicsConfig:
     """Parameters for the toy evaporation and telemetry model."""
@@ -22,6 +32,10 @@ class PhysicsConfig:
     target_scale_clip: float = 0.8
 
     def validate(self) -> None:
+        _integer("total_qubits", self.total_qubits, 2)
+        _integer("data_dim", self.data_dim, 2)
+        _integer("target_layers", self.target_layers, 2)
+        _integer("target_hidden_dim", self.target_hidden_dim, 8)
         for name, value in (
             ("page_time", self.page_time),
             ("visibility_width", self.visibility_width),
@@ -29,11 +43,8 @@ class PhysicsConfig:
             ("mass_floor", self.mass_floor),
             ("target_scale_clip", self.target_scale_clip),
         ):
-            if not math.isfinite(value):
-                raise ValueError(f"{name} must be finite")
-        if self.total_qubits < 2:
-            raise ValueError("total_qubits must be at least 2")
-        if self.data_dim < 2 or self.data_dim % 2:
+            _finite(name, value)
+        if self.data_dim % 2:
             raise ValueError("data_dim must be an even integer of at least 2")
         if not 0.0 < self.page_time < 1.0:
             raise ValueError("page_time must lie strictly between 0 and 1")
@@ -41,6 +52,8 @@ class PhysicsConfig:
             raise ValueError("visibility_width must be positive")
         if not 0.0 < self.mass_floor < self.initial_mass:
             raise ValueError("mass_floor must lie between zero and initial_mass")
+        if self.target_scale_clip <= 0.0:
+            raise ValueError("target_scale_clip must be positive")
 
 
 @dataclass(frozen=True)
@@ -55,14 +68,15 @@ class FlowConfig:
     scale_clip: float = 1.5
 
     def validate(self) -> None:
-        if not math.isfinite(self.scale_clip):
-            raise ValueError("scale_clip must be finite")
-        if self.data_dim < 2:
-            raise ValueError("data_dim must be at least 2")
-        if self.condition_dim < 1 or self.context_dim < 2:
-            raise ValueError("condition dimensions must be positive")
-        if self.hidden_dim < 8 or self.num_layers < 2:
-            raise ValueError("flow must contain at least two nontrivial layers")
+        for name, value, minimum in (
+            ("data_dim", self.data_dim, 2),
+            ("condition_dim", self.condition_dim, 1),
+            ("context_dim", self.context_dim, 2),
+            ("hidden_dim", self.hidden_dim, 8),
+            ("num_layers", self.num_layers, 2),
+        ):
+            _integer(name, value, minimum)
+        _finite("scale_clip", self.scale_clip)
         if self.scale_clip <= 0.0:
             raise ValueError("scale_clip must be positive")
 
@@ -84,14 +98,23 @@ class TrainingConfig:
     device: str = "cpu"
 
     def validate(self) -> None:
-        for name, value in (
+        for name, value, minimum in (
+            ("steps", self.steps, 1),
+            ("batch_size", self.batch_size, 2),
+            ("evaluation_times", self.evaluation_times, 3),
+            ("evaluation_samples", self.evaluation_samples, 16),
+            ("seed", self.seed, 0),
+        ):
+            _integer(name, value, minimum)
+        if self.seed > 2**63 - 4:
+            raise ValueError("seed must leave room for independent evaluation streams")
+        for name, numeric in (
             ("learning_rate", self.learning_rate),
             ("weight_decay", self.weight_decay),
             ("alignment_weight", self.alignment_weight),
             ("gradient_clip", self.gradient_clip),
         ):
-            if not math.isfinite(value):
-                raise ValueError(f"{name} must be finite")
+            _finite(name, numeric)
         if self.steps < 1 or self.batch_size < 2:
             raise ValueError("steps and batch_size must be positive")
         if self.learning_rate <= 0.0 or self.weight_decay < 0.0:
@@ -100,8 +123,10 @@ class TrainingConfig:
             raise ValueError("invalid regularization configuration")
         if self.evaluation_times < 3 or self.evaluation_samples < 16:
             raise ValueError("evaluation grid is too small")
-        if self.dtype not in {"float32", "float64"}:
+        if not isinstance(self.dtype, str) or self.dtype not in {"float32", "float64"}:
             raise ValueError("dtype must be float32 or float64")
+        if not isinstance(self.device, str) or not self.device:
+            raise ValueError("device must be a nonempty device string")
 
 
 @dataclass(frozen=True)
@@ -118,12 +143,18 @@ class ExperimentConfig:
         self.training.validate()
         if self.physics.data_dim != self.flow.data_dim:
             raise ValueError("physics.data_dim must equal flow.data_dim")
+        if self.flow.condition_dim != 2:
+            raise ValueError("the radiation experiment requires condition_dim=2 for time and mass")
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
     def from_mapping(cls, values: dict[str, Any]) -> ExperimentConfig:
+        if not isinstance(values, dict) or set(values) - {"physics", "flow", "training"}:
+            raise ValueError("config must contain only physics, flow, and training mappings")
+        if any(not isinstance(section, dict) for section in values.values()):
+            raise ValueError("configuration sections must be mappings")
         config = cls(
             physics=PhysicsConfig(**values.get("physics", {})),
             flow=FlowConfig(**values.get("flow", {})),

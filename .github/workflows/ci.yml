@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feature/**"]
   pull_request:
     branches: [main]
 
@@ -11,10 +11,17 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONHASHSEED: "0"
+      PYTHONUTF8: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -24,15 +31,28 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-ci-lock.txt
       - name: Install
+        shell: bash
         run: |
+          python -m pip install --disable-pip-version-check torch==2.13.0+cpu --index-url https://download.pytorch.org/whl/cpu
           python -m pip install --disable-pip-version-check -r requirements-ci-lock.txt
-          python -m pip install --disable-pip-version-check --no-deps -e .
+          python -m build --wheel --no-isolation --outdir .audit-build/dist
+          python -m pip install --disable-pip-version-check --no-deps --force-reinstall .audit-build/dist/quantum_radiation_flow-0.2.0-py3-none-any.whl
           python -m pip check
+          python -c "import torch; assert torch.__version__ == '2.13.0+cpu'; assert torch.version.cuda is None"
+          node --version
       - name: Lint
         run: python -m ruff check .
       - name: Test
         run: python -m pytest
+      - name: Type check
+        run: python -m mypy src/quantum_radiation_flow
       - name: Compile
         run: python -m compileall src tests scripts report
       - name: Validate repository surface
         run: python scripts/part4_validate_repository.py
+      - name: Run installed CLI and reload held-out evaluation
+        shell: bash
+        run: |
+          quantum-radiation-flow --steps 3 --output .audit-build/ci-smoke
+          python scripts/part3_decrypt_state.py --artifacts .audit-build/ci-smoke
+          git diff --exit-code

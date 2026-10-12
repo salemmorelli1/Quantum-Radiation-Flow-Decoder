@@ -332,7 +332,7 @@
       <span class="mark" aria-hidden="true"></span><span>Quantum Radiation Flow Decoder</span>
     </a>
     <nav class="top-actions" aria-label="Project links">
-      <a class="button small primary" href="Quantum_Radiation_Flow_APA_Report.pdf" target="_blank" rel="noopener">Read the Report</a>
+      <a class="button small primary" href="docs/Quantum_Radiation_Flow_APA_Report.pdf" target="_blank" rel="noopener">Read the Report</a>
       <a class="button small" href="https://github.com/salemmorelli1/Quantum-Radiation-Flow-Decoder" target="_blank" rel="noopener">GitHub ↗</a>
     </nav>
   </header>
@@ -358,7 +358,7 @@
         <div class="hero-hole"></div>
         <div class="hero-lens"></div>
         <span class="hero-packet"></span><span class="hero-packet"></span><span class="hero-packet"></span>
-        <div class="hero-callout"><strong>INTERACTION UNLOCKED</strong>Drag the cyan lens through the live radiation field. Its position changes capture quality and decoder fidelity.</div>
+        <div class="hero-callout"><strong>INTERACTION UNLOCKED</strong>Drag the cyan lens through the animated radiation field. Its position changes illustrative capture and recovery scores.</div>
         <span class="hero-chip">ANALYTIC SURROGATE</span>
       </div>
     </section>
@@ -372,7 +372,7 @@
         </div>
         <div class="lab-status">
           <span class="live-label" id="runState">Simulation ready</span>
-          <small>Browser analytic model · no network required</small>
+          <small>Illustrative browser model · no trained results</small>
         </div>
       </div>
 
@@ -399,7 +399,7 @@
         <article class="panel metric"><div class="metric-label">Remaining mass</div><div class="metric-value" id="metricMass">0.936</div><div class="metric-note">Stopped M(τ) / M₀</div></article>
         <article class="panel metric"><div class="metric-label">Page entropy</div><div class="metric-value" id="metricPage">—</div><div class="metric-note">Finite benchmark · nats</div></article>
         <article class="panel metric"><div class="metric-label">Flow entropy</div><div class="metric-value" id="metricFlow">—</div><div class="metric-note">Classical telemetry surrogate</div></article>
-        <article class="panel metric"><div class="metric-label">Decoder fidelity</div><div class="metric-value" id="metricFidelity">—</div><div class="metric-note">Paired toy-state score</div></article>
+        <article class="panel metric"><div class="metric-label">Decoder fidelity</div><div class="metric-value" id="metricFidelity">—</div><div class="metric-note">Illustrative recovery proxy</div></article>
         <article class="panel metric"><div class="metric-label">Packets resolved</div><div class="metric-value" id="metricPackets">0</div><div class="metric-note">Inside decoder lens</div></article>
       </div>
 
@@ -422,7 +422,7 @@
         <article class="panel decoder-panel">
           <div class="panel-head"><div><div class="kicker">Information decryption</div><h3>Recovered state</h3></div><button class="button small" id="secretButton" type="button">New secret</button></div>
           <div class="decoder-score" id="decoderScore">0.250</div>
-          <div class="score-caption">Paired toy-state fidelity surrogate · higher is better</div>
+          <div class="score-caption">Heuristic recovery proxy · not a computed state overlap</div>
           <div class="vector-legend"><span>Secret coordinate</span><span>Recovered coordinate</span></div>
           <div class="vectors" id="vectorBars" aria-label="Secret and recovered state coordinate comparison"></div>
           <div class="decoder-equation">y<sub>τ</sub> = v(τ) · s + [1 − v(τ)] · ε<br>ẑ = f<sub>θ</sub><sup>−1</sup>(y<sub>τ</sub> | τ, M<sub>τ</sub>)</div>
@@ -436,7 +436,7 @@
               <div class="panel-head"><div><div class="kicker">Three-curve view</div><h3>Keep unlike information measures distinct.</h3></div><span class="pill"><i></i>Drag chart to scrub</span></div>
               <svg id="curveSvg" viewBox="0 0 900 285" role="img" aria-labelledby="curveTitle curveDesc">
                 <title id="curveTitle">Entropy and decoder curves across evaporation time</title>
-                <desc id="curveDesc">Amber shows Page entropy, cyan shows a classical flow entropy surrogate, and violet shows paired decoder fidelity.</desc>
+                <desc id="curveDesc">Amber shows Page entropy, cyan shows a classical flow entropy surrogate, and violet shows an illustrative recovery proxy.</desc>
                 <g id="gridLines"></g>
                 <path id="areaPage" fill="url(#pageFade)" stroke="none"></path>
                 <path id="pathPage" fill="none" stroke="#ffc35b" stroke-width="4" stroke-linecap="round"></path>
@@ -465,7 +465,7 @@
           <div class="controls-grid">
             <div class="control"><label for="qubitSelect">Total toy qubits <output id="qubitOutput">14</output></label><select id="qubitSelect"><option>8</option><option>10</option><option>12</option><option selected>14</option><option>16</option></select></div>
             <div class="control"><label for="scrambleSlider">Scramble strength <output id="scrambleOutput">0.72</output></label><input id="scrambleSlider" type="range" min="0" max="100" value="72"></div>
-            <div class="control"><label for="widthSlider">Visibility width <output id="widthOutput">0.080</output></label><input id="widthSlider" type="range" min="3" max="18" value="8"></div>
+            <div class="control"><label for="widthSlider">Visibility width <output id="widthOutput">0.075</output></label><input id="widthSlider" type="range" min="3" max="18" step="0.5" value="7.5"></div>
             <div class="control"><label for="depthSlider">Flow depth <output id="depthOutput">8 blocks</output></label><input id="depthSlider" type="range" min="2" max="16" step="2" value="8"></div>
           </div>
         </article>
@@ -479,7 +479,7 @@
         <article class="panel research-card"><div class="kicker">03 · Decryption</div><h3>Paired latent recovery</h3><p>Paired alignment resolves the rotational non-identifiability that maximum likelihood alone cannot remove.</p></article>
         <article class="panel boundary">
           <h2 id="boundary-title">What this browser model does—and does not—claim.</h2>
-          <div class="claim"><strong>It does:</strong> expose a finite Page benchmark, animate an analytic telemetry surrogate, distinguish entropy definitions, and demonstrate how paired inverse coordinates can be scored.</div>
+          <div class="claim"><strong>It does:</strong> expose a finite Page benchmark, animate an illustrative telemetry surrogate, distinguish entropy definitions, and illustrate a heuristic recovery score. The animated vectors do not determine this score; measured toy-state overlap is computed in Python.</div>
           <div class="claim"><strong>It does not:</strong> run the trained PyTorch model in your browser, identify von Neumann entropy from one classical measurement basis, or prove unitary black-hole evaporation.</div>
         </article>
       </div>
@@ -505,7 +505,7 @@
         speed: 0.055,
         qubits: 14,
         scramble: 0.72,
-        width: 0.08,
+        width: 0.075,
         depth: 8,
         seed: 941,
         lens: { x: 0.76, y: 0.36, r: 0.115 },
@@ -679,7 +679,7 @@
 
       function baseFidelityAt(t) {
         const visibility = sigmoid((t - .5) / state.width);
-        return .25 + .75 * visibility ** 1.35;
+        return .25 + .75 * visibility ** 2;
       }
 
       function currentFidelity() {

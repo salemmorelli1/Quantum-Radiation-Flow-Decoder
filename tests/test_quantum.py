@@ -16,7 +16,9 @@ def test_bell_state_has_log_two_radiation_entropy() -> None:
     ) / math.sqrt(2.0)
     rho_r = radiation_density_matrix(state, black_hole_dimension=2, radiation_dimension=2)
     entropy = von_neumann_entropy(rho_r)
-    torch.testing.assert_close(entropy, torch.tensor(math.log(2.0)), atol=1.0e-12, rtol=0.0)
+    torch.testing.assert_close(
+        entropy, torch.tensor(math.log(2.0), dtype=torch.float64), atol=1.0e-12, rtol=0.0
+    )
 
 
 def test_page_curve_increases_then_decreases() -> None:

@@ -1,22 +1,22 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantum-radiation-flow"
-version = "0.1.0"
+version = "0.2.0"
 description = "Conditional normalizing flows for statistically auditable toy models of black-hole information recovery"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = "MIT"
 authors = [{name = "Salem Morelli"}]
 keywords = ["black holes", "normalizing flows", "variational inference", "Page curve", "PyTorch"]
 dependencies = ["torch>=2.2"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.8", "mypy>=1.11"]
+dev = ["pytest>=8", "ruff>=0.8", "mypy>=1.11", "pypdf>=6", "python-docx>=1.1"]
 plots = ["matplotlib>=3.8"]
-report = ["matplotlib>=3.8", "numpy>=1.26", "python-docx>=1.1"]
+report = ["matplotlib>=3.8", "numpy>=1.26", "python-docx>=1.1", "pypdf>=6"]
 
 [project.scripts]
 quantum-radiation-flow = "quantum_radiation_flow.cli:main"

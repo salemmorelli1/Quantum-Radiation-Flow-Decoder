@@ -149,15 +149,18 @@ def add_figure(document: Document, filename: str, number: int, title: str, note:
     label = document.add_paragraph()
     label.paragraph_format.space_before = Pt(5)
     label.paragraph_format.space_after = Pt(0)
+    label.paragraph_format.keep_with_next = True
     run = label.add_run(f"Figure {number}")
     set_font(run, size=10.5, bold=True)
     title_p = document.add_paragraph()
     title_p.paragraph_format.space_after = Pt(4)
+    title_p.paragraph_format.keep_with_next = True
     title_run = title_p.add_run(title)
     set_font(title_run, size=10.5, italic=True)
     image_p = document.add_paragraph()
     image_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     image_p.paragraph_format.space_after = Pt(3)
+    image_p.paragraph_format.keep_with_next = True
     # Preserve legibility while leaving enough vertical room for APA double-spaced
     # interpretation on the same page.
     picture = image_p.add_run().add_picture(
@@ -296,15 +299,15 @@ def build() -> None:
     add_centered(document, "Deep Generative Modeling of Hawking Radiation", size=16, bold=True, after=8)
     add_centered(document, "Conditional Normalizing Flows, Variational Inference, and the Statistical Geometry of Information Recovery", size=13, bold=True, after=30)
     add_centered(document, "Salem Morelli", size=12, after=4)
-    add_centered(document, "PhD Research Program in Statistics", size=12, after=4)
+    add_centered(document, "Independent Research in Statistics", size=12, after=4)
     add_centered(document, "Project 3 Research Report", size=12, after=4)
-    add_centered(document, "August 24, 2026", size=12)
+    add_centered(document, "October 12, 2026", size=12)
     add_page_break(document)
 
     # Page 2 - abstract
     add_page_heading(document, "Abstract")
     add_body(document, "This report develops a differentiable statistical framework for a controlled toy version of black-hole information recovery. A finite-dimensional bipartite pure state supplies the quantum benchmark: radiation entropy is computed from its reduced density operator and compared with Page's exact Haar-average formula. A separate conditional RealNVP represents continuous detector telemetry. Its Jacobian provides exact sample-wise log densities; differential Shannon entropy remains a Monte Carlo expectation. Thus, a classical density model is not a density operator, and neural invertibility is not physical reversibility of an unknown quantum channel.", indent=False)
-    add_body(document, "The experiment conditions every coupling block on time and stopped mass, trains by likelihood or reverse-KL variational free energy, and adds paired latent alignment. Alignment addresses a formal non-identifiability caused by the rotational symmetry of a spherical Gaussian base. A frozen reference scrambler and a Page-time visibility transition define an exact-density benchmark in which later radiation becomes correlated with a toy complex secret. Evaluation keeps quantum Page entropy, classical flow entropy, both KL directions, Monte Carlo error, round-trip error, and paired pure-state fidelity as distinct estimands.", indent=False)
+    add_body(document, "The experiment conditions every coupling block on time and stopped mass, fits the baseline by likelihood and paired latent alignment, and exposes a reverse-KL objective for custom optimization. Alignment addresses a formal non-identifiability caused by the rotational symmetry of a spherical Gaussian base. A frozen reference scrambler and a Page-time visibility transition define an exact-density benchmark in which later radiation becomes correlated with a toy complex secret. Evaluation keeps quantum Page entropy, classical flow entropy, both KL directions, Monte Carlo error, round-trip error, and paired pure-state fidelity as distinct estimands.", indent=False)
     add_body(document, "Reference calculations locate the 10-qubit Page maximum at normalized time 0.5 with entropy 2.966 nats. They also demonstrate that telemetry entropy need not have the Page shape and that measurement entropy depends on basis. The results establish a falsifiable computational design, not evidence that physical Hawking radiation has been decoded.", indent=False)
     add_body(document, "Keywords: black-hole information paradox, Page curve, Hayden-Preskill protocol, normalizing flows, variational inference, conditional density estimation, PyTorch", indent=False, size=11)
     add_page_break(document)
@@ -376,7 +379,7 @@ def build() -> None:
     add_equation(document, "v_A=u_A,    v_B=u_B⊙exp[s_θ(u_A,c)] + t_θ(u_A,c)", 12)
     add_equation(document, "u_B=(v_B-t_θ(v_A,c))⊙exp[-s_θ(v_A,c)]", 13)
     add_equation(document, "log|det J| = Σ_(j∈B) s_θ,j(u_A,c)", 14)
-    add_body(document, "The implementation alternates masks and permutations so every coordinate can influence every other coordinate across depth. Log-scale is bounded as a*tanh(raw/a). This guarantees finite positive scale for finite network outputs and limits local condition numbers. Zero initialization of each final conditioner layer makes the initial transformation the identity, reducing early optimization shocks. These safeguards preserve differentiability but do not prove global optimization or adequate expressiveness.")
+    add_body(document, "The implementation alternates masks and permutations so every coordinate can influence every other coordinate across depth. Log-scale is bounded as a*tanh(raw/a). This guarantees finite positive scale for finite network outputs and limits local condition numbers. Zero initialization makes each initial coupling map the identity; the full flow still includes its fixed coordinate permutations, reducing early optimization shocks. These safeguards preserve differentiability but do not prove global optimization or adequate expressiveness.")
     add_body(document, "For particle-like radiation, a dense ordered vector is a convenience rather than a symmetry principle. A future architecture should use permutation-equivariant conditioners, set coupling transforms, or mode-aware attention while preserving a tractable determinant. Conservation laws can enter through constrained coordinates or volume-preserving blocks, but volume preservation also fixes entropy and may be too restrictive when detector coarse-graining changes effective volume.")
     add_page_break(document)
 
@@ -396,13 +399,13 @@ def build() -> None:
     add_body(document, "At each condition c_t, the flow draws z_i, computes x_i=f_theta(z_i;c_t), and evaluates log q_theta(x_i|c_t) using the base density and accumulated Jacobian. The estimator in Equation 18 is unbiased for h(q_theta) when samples are independent and the expectation exists. Its estimated standard error is the sample standard deviation of negative log density divided by the square root of N.")
     add_equation(document, "ĥ_t = -(1/N)Σ_i log q_θ(x_i|c_t)", 18)
     add_equation(document, "MCSE(ĥ_t) = sd{-log q_θ(x_i|c_t)}/√N", 19)
-    add_figure(document, "figure_3_three_curves.png", 3, "Three Non-Equivalent Time Trajectories", "The Page curve is analytic. Telemetry entropy and fidelity are deterministic browser/report surrogates derived from the stated toy model; they are not fitted physical data.", width=5.7, alt="Three stacked line plots showing Page entropy, telemetry differential entropy, and toy decoder fidelity across normalized evaporation time.")
+    add_figure(document, "figure_3_three_curves.png", 3, "Three Non-Equivalent Time Trajectories", "The Page curve is analytic. Telemetry entropy and fidelity are illustrative report proxies, not expectations derived from the normalized Gaussian state model. The browser uses the same squared-visibility recovery proxy with additional explanatory controls.", width=5.7, alt="Three stacked line plots showing Page entropy, telemetry differential entropy, and toy decoder fidelity across normalized evaporation time.")
     add_body(document, "The figure shows why shape matching is insufficient. A conditional flow can generate a peaked classical entropy trajectory by architecture or target design, but that visual resemblance would not establish unitarity. The quantum curve, classical curve, and recovery curve must be validated against their own estimands and uncertainty statements.")
     add_page_break(document)
 
     # Page 13
     add_page_heading(document, "Reference Experiment and Architecture")
-    add_body(document, "The baseline uses eight real telemetry coordinates, interpreted as four complex amplitudes only for the paired toy-state fidelity calculation. A frozen four-block conditional scrambler generates the reference density. The learned model contains eight conditional coupling blocks, 128-unit SiLU conditioners, time-mass context embeddings, and bounded log-scales. All default calculations use float64 arithmetic and explicit generators.")
+    add_body(document, "The baseline uses eight real telemetry coordinates, interpreted as four complex amplitudes only for the paired toy-state fidelity calculation. A frozen four-block conditional scrambler generates the reference density. The learned model contains eight conditional coupling blocks, 128-unit SiLU conditioners, time-mass context embeddings, and bounded log-scales. Default calculations use float64 and separate seeded streams for initialization, training, and evaluation.")
     add_table(document, "table_3_architecture.csv", 3, "Baseline Conditional-Flow Architecture", [2250, 3250, 3620], "The architecture is intentionally modest enough for CPU verification while retaining the same interfaces needed for larger experiments.")
     add_body(document, "The remaining mass follows a stopped semiclassical schedule M(t)=max(M_floor,M_0(1-t)^(1/3)). This covariate supplies a physically motivated monotone condition but is not used at M=0, where the semiclassical law is singular. The reference channel is synthetic and exactly evaluable. Consequently, forward and reverse KL can both be estimated, making approximation error auditable in a way unavailable for an implicit simulator.")
     add_body(document, "A publication run should freeze configuration, software versions, device, seed family, evaluation grid, and all early-stopping rules before looking at the final curve. Multiple independent training seeds are required because neural optimization variance is a scientific uncertainty source, not merely an engineering nuisance.")
@@ -414,7 +417,7 @@ def build() -> None:
     add_body(document, "The training loop samples paired target batches, evaluates log q on data, adds the alignment penalty, calls loss.backward(), clips the global gradient norm, checks finiteness, and updates with AdamW. No event is detached from the learned computation graph. The target generator is frozen and sampled under no_grad because it defines data rather than an optimized adversary.")
     add_equation(document, "∇_θ L_total = autograd[L_MLE + λ_align L_align]", 20)
     add_body(document, "Production extensions should use automatic mixed precision only after a float64 reference is validated, because log determinants and small KL differences are sensitive to precision. Batch size, layer width, and number of time conditions should be scaled separately. Gradient accumulation can reduce memory without changing the estimand, whereas truncating dimensions changes the measurement model and must be documented as coarse-graining.")
-    add_body(document, "The repository exposes a typed configuration hierarchy, command-line entry point, atomic JSON/CSV writers, CI across Python 3.11 and 3.12, and tests for quantum entropy, target normalization, exact inversion, and a differentiable smoke optimization. Generated results are excluded from source control until explicitly frozen for a release.")
+    add_body(document, "The repository exposes typed configuration, atomic JSON/CSV writers, CPU CI on Python 3.11 and 3.12, and finite-value checks. Each run saves trained and target states, source and artifact hashes, and separate random streams. COMPLETED records execution; scientific validation remains NOT_ASSESSED until preregistered tolerances and seed-level comparisons are evaluated.")
     add_page_break(document)
 
     # Page 15
@@ -422,9 +425,9 @@ def build() -> None:
     add_body(document, "For paired synthetic data, the learned inverse produces z_hat=f_theta^{-1}(x;c_t). The eight real coordinates are split into real and imaginary parts and normalized to a four-dimensional complex vector. Fidelity with the normalized secret is then computed by Equation 21.")
     add_equation(document, "|ψ̂⟩ = normalize(ẑ_1:4 + i ẑ_5:8)", 21)
     add_equation(document, "F_t = |⟨ψ_t|ψ̂_t⟩|²", 22)
-    add_body(document, "At zero visibility, secret and accessible latent are independent, so expected fidelity is the random-overlap baseline 1/d for complex dimension d. At high visibility, a correctly aligned inverse approaches the secret up to residual nuisance and approximation error. The analytic surrogate used in browser and report figures is 1/d+(1-1/d)v(t)^2; it is a design expectation, not a trained result.")
+    add_body(document, "At zero visibility, secret and accessible latent are independent, so expected fidelity is the random-overlap baseline 1/d for complex dimension d. At high visibility, a correctly aligned inverse approaches the secret up to residual nuisance and approximation error. The analytic surrogate used in browser and report figures is 1/d+(1-1/d)v(t)^2; it is a heuristic interpolation, not the expected fidelity of normalized correlated Gaussian states and not a trained result.")
     add_body(document, "A physical Hayden-Preskill decoder would act on quantum subsystems and may require coherent access to early radiation, a reference system, the scrambling unitary, and a quantum computation of formidable complexity. The toy fidelity instead tests whether the statistical inverse coordinate tracks a known paired vector. It is useful because it can fail for identifiable reasons, but it must be labeled as a proxy.")
-    add_body(document, "The decoder is evaluated on held-out secrets and times, compared with an unconditioned flow and a no-alignment ablation, and summarized with seed-level confidence intervals. High likelihood with baseline fidelity is evidence of latent non-identifiability rather than successful decryption.")
+    add_body(document, "The code evaluates fresh secrets on a fixed time grid, with independent random-state null and known-scrambler inverse diagnostics. Pointwise Monte Carlo intervals condition on one trained model. Trained unconditioned/no-alignment ablations and seed-level intervals remain planned. High likelihood alone does not identify latent orientation or establish decoding.")
     add_page_break(document)
 
     # Page 16

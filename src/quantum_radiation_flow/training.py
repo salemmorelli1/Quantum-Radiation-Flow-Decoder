@@ -9,6 +9,7 @@ from torch import Tensor
 
 from .config import TrainingConfig
 from .flow import ConditionalRealNVP, standard_normal_log_prob
+from .provenance import stream_seed
 from .target import ReferenceRadiationModel
 
 
@@ -42,6 +43,8 @@ def train_conditional_flow(
     """
 
     config.validate()
+    if model.config.data_dim != target.physics.data_dim or model.config.condition_dim != 2:
+        raise ValueError("training requires matching data dimensions and time-mass conditioning")
     dtype = resolve_dtype(config.dtype)
     device = torch.device(config.device)
     model.to(device=device, dtype=dtype)
@@ -52,7 +55,7 @@ def train_conditional_flow(
         lr=config.learning_rate,
         weight_decay=config.weight_decay,
     )
-    generator = torch.Generator(device=device).manual_seed(config.seed)
+    generator = torch.Generator(device=device).manual_seed(stream_seed(config.seed, "training"))
     history: list[TrainingRecord] = []
     report_every = max(1, config.steps // 100)
 
@@ -70,11 +73,15 @@ def train_conditional_flow(
         loss = nll + config.alignment_weight * alignment
 
         optimizer.zero_grad(set_to_none=True)
-        loss.backward()
+        if not torch.isfinite(loss):
+            raise FloatingPointError("non-finite optimization loss")
+        torch.autograd.backward(loss)
         gradient_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), config.gradient_clip)
         if not torch.isfinite(loss) or not torch.isfinite(gradient_norm):
             raise FloatingPointError("non-finite optimization state")
         optimizer.step()
+        if any(not torch.isfinite(parameter).all() for parameter in model.parameters()):
+            raise FloatingPointError("non-finite parameters after optimizer update")
 
         if step == 1 or step == config.steps or step % report_every == 0:
             history.append(

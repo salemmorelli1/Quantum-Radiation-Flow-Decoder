@@ -55,6 +55,10 @@ independent nuisance. The marginal distribution of `y_tau` remains standard
 Gaussian, so the frozen reference scrambler has a normalized exact density;
 correlation with the secret increases across Page time.
 
+Changing `physics.page_time` moves the Gaussian visibility transition only.
+The Haar benchmark uses emitted-qubit fraction as its time index and, for an
+even total qubit count, reaches its maximum at 0.5 independently of that setting.
+
 ## Installation
 
 ```bash
@@ -71,6 +75,7 @@ audited CI lock first and then install this package without re-resolving its
 dependencies:
 
 ```bash
+python -m pip install torch==2.13.0+cpu --index-url https://download.pytorch.org/whl/cpu
 python -m pip install --disable-pip-version-check -r requirements-ci-lock.txt
 python -m pip install --disable-pip-version-check --no-deps -e .
 python -m pip check
@@ -92,8 +97,27 @@ The run writes:
 
 - `experiment_summary.json`: configuration, optimization history, diagnostics,
   and interpretive labels.
-- `page_curve.csv`: quantum benchmark, flow entropy, Monte Carlo standard error,
-  KL estimates, visibility, mass, and decoder fidelity at each time.
+- `page_curve.csv`: quantum benchmark, flow entropy and KL MCSEs, and paired recovery diagnostics at each time.
+- `model_checkpoint.pt`: trained flow and frozen reference state dictionaries.
+- `artifact_manifest.json`: SHA-256 fingerprints of the summary, curve, and checkpoint.
+
+`COMPLETED` means finite execution finished. `scientific_validation.status` remains
+`NOT_ASSESSED`: the default run does not apply preregistered acceptance tolerances
+or execute trained unconditioned/no-alignment ablations and seed-family inference.
+Fidelity intervals are approximate pointwise Monte Carlo intervals over fresh
+secrets, conditional on one trained model; they are not simultaneous or seed-level
+intervals. The paired null is an independent random state, and the known-scrambler
+inverse returns accessible coordinates, not an optimal decoding bound.
+
+Reload and repeat the held-out evaluation with:
+
+```bash
+python scripts/part3_decrypt_state.py --artifacts artifacts/latest
+```
+
+The hashes support integrity checks; they do not authenticate a physical data
+source or attest that an experiment was executed. CUDA execution is outside the
+audited CPU verification matrix.
 
 ## Tests and static checks
 
@@ -101,11 +125,16 @@ The run writes:
 python -m pytest
 python -m ruff check .
 python -m compileall src tests scripts report
+python -m mypy src/quantum_radiation_flow
+python scripts/part4_validate_repository.py
 ```
 
 The tests verify exact forward/inverse round trips, Jacobian cancellation,
 finite log densities, density-operator entropy, Page-curve shape, target-density
-consistency, and a short differentiable training pass.
+consistency, a short differentiable training pass, nontrivial full-Jacobian agreement, invalid
+density-operator rejection, held-out checkpoint replay, and artifact tamper detection.
+GitHub also checks actual browser math using Node. The browser recovery score is
+a heuristic interpolation, not a measured or expected normalized-state fidelity.
 
 ## Repository structure
 
@@ -181,6 +210,14 @@ python report/build_report.py
 The committed PDF is exactly 25 letter-sized pages. Figure and table values are
 analytic or deterministic toy-design benchmarks; they are not presented as
 measurements of physical Hawking radiation.
+
+## Current audit
+
+See [the October 12 audit](docs/DENSITY_RECOVERY_AUDIT_2026-10-12.md) for
+reproduced defects, corrections, validation, and the default-run limitation.
+The 1,200-step single-seed audit run did not establish successful decoding, even
+though its held-out density KL estimates were small. Software verification is
+separate from a successful scientific result.
 
 ## License
 

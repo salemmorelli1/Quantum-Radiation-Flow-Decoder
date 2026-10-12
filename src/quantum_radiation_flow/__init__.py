@@ -1,5 +1,7 @@
 """Differentiable quantum-radiation flow decoder."""
 
+__version__ = "0.2.0"
+
 from .config import ExperimentConfig, FlowConfig, PhysicsConfig, TrainingConfig
 from .flow import ConditionalRealNVP, TransformResult, standard_normal_log_prob
 from .pipeline import evaluate_model, run_experiment
@@ -13,8 +15,6 @@ from .quantum import (
 )
 from .target import RadiationBatch, ReferenceRadiationModel
 from .training import reverse_kl_objective, train_conditional_flow
-
-__version__ = "0.1.0"
 
 __all__ = [
     "ConditionalRealNVP",

@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import cast
 
 import torch
 from torch import Tensor, nn
 
 from .config import FlowConfig
+from .validation import finite_result, finite_tensor
+from .validation import sample_count as validate_sample_count
 
 LOG_2PI = math.log(2.0 * math.pi)
 
@@ -16,7 +19,8 @@ LOG_2PI = math.log(2.0 * math.pi)
 def standard_normal_log_prob(value: Tensor) -> Tensor:
     """Log density of an independent standard Gaussian, reduced by row."""
 
-    return -0.5 * (value.square() + LOG_2PI).sum(dim=-1)
+    finite_tensor(value, "Gaussian coordinates")
+    return finite_result(-0.5 * (value.square() + LOG_2PI).sum(dim=-1), "Gaussian log density")
 
 
 @dataclass(frozen=True)
@@ -40,7 +44,7 @@ class ConditionEncoder(nn.Module):
     def forward(self, condition: Tensor) -> Tensor:
         if condition.ndim != 2:
             raise ValueError("condition must have shape [batch, condition_dim]")
-        return self.network(condition)
+        return cast(Tensor, self.network(condition))
 
 
 class AffineCoupling(nn.Module):
@@ -50,6 +54,8 @@ class AffineCoupling(nn.Module):
     and translation of the complementary coordinates.  Bounding log-scale by
     tanh prevents singular Jacobians while retaining exact invertibility.
     """
+
+    mask: Tensor
 
     def __init__(
         self,
@@ -62,6 +68,12 @@ class AffineCoupling(nn.Module):
         super().__init__()
         if mask.shape != (data_dim,):
             raise ValueError("mask shape must equal [data_dim]")
+        if (
+            not torch.all((mask == 0) | (mask == 1))
+            or not torch.any(mask == 0)
+            or not torch.any(mask == 1)
+        ):
+            raise ValueError("mask must be binary with both fixed and transformed coordinates")
         self.register_buffer("mask", mask)
         self.scale_clip = float(scale_clip)
         self.conditioner = nn.Sequential(
@@ -99,8 +111,18 @@ class AffineCoupling(nn.Module):
 class Permutation(nn.Module):
     """Fixed coordinate permutation with zero log-Jacobian."""
 
+    permutation: Tensor
+    inverse_permutation: Tensor
+
     def __init__(self, permutation: Tensor) -> None:
         super().__init__()
+        if permutation.ndim != 1 or permutation.dtype != torch.int64 or permutation.numel() < 1:
+            raise ValueError("permutation must be a nonempty int64 vector")
+        if not torch.equal(
+            permutation.sort().values,
+            torch.arange(permutation.numel(), device=permutation.device),
+        ):
+            raise ValueError("permutation must contain each coordinate exactly once")
         inverse = torch.empty_like(permutation)
         inverse[permutation] = torch.arange(permutation.numel(), device=permutation.device)
         self.register_buffer("permutation", permutation)
@@ -152,11 +174,15 @@ class ConditionalRealNVP(nn.Module):
         context = self.context_encoder(condition)
         value = latent
         logdet = latent.new_zeros(latent.shape[0])
-        for transform in self.transforms:
-            result = transform(value, context)
+        for component in self.transforms:
+            transform = cast(AffineCoupling | Permutation, component)
+            result = cast(TransformResult, transform(value, context))
             value = result.value
             logdet = logdet + result.log_abs_det_jacobian
-        return TransformResult(value, logdet)
+        return TransformResult(
+            finite_result(value, "decoded coordinates"),
+            finite_result(logdet, "forward log determinant"),
+        )
 
     def encode(self, observation: Tensor, condition: Tensor) -> TransformResult:
         """Invert radiation telemetry to statistical latent coordinates."""
@@ -165,15 +191,22 @@ class ConditionalRealNVP(nn.Module):
         context = self.context_encoder(condition)
         value = observation
         logdet = observation.new_zeros(observation.shape[0])
-        for transform in reversed(self.transforms):
+        for component in reversed(self.transforms):
+            transform = cast(AffineCoupling | Permutation, component)
             result = transform.inverse(value, context)
             value = result.value
             logdet = logdet + result.log_abs_det_jacobian
-        return TransformResult(value, logdet)
+        return TransformResult(
+            finite_result(value, "encoded coordinates"),
+            finite_result(logdet, "inverse log determinant"),
+        )
 
     def log_prob(self, observation: Tensor, condition: Tensor) -> Tensor:
         encoded = self.encode(observation, condition)
-        return standard_normal_log_prob(encoded.value) + encoded.log_abs_det_jacobian
+        return finite_result(
+            standard_normal_log_prob(encoded.value) + encoded.log_abs_det_jacobian,
+            "flow log density",
+        )
 
     def sample(
         self,
@@ -184,8 +217,7 @@ class ConditionalRealNVP(nn.Module):
     ) -> tuple[Tensor, Tensor]:
         """Generate samples and their exact sample-wise log densities."""
 
-        if sample_count < 1:
-            raise ValueError("sample_count must be positive")
+        validate_sample_count(sample_count)
         condition = _expand_condition(condition, sample_count)
         reference = next(self.parameters())
         latent = torch.randn(
@@ -196,7 +228,9 @@ class ConditionalRealNVP(nn.Module):
             dtype=reference.dtype,
         )
         decoded = self.decode(latent, condition)
-        log_prob = standard_normal_log_prob(latent) - decoded.log_abs_det_jacobian
+        log_prob = finite_result(
+            standard_normal_log_prob(latent) - decoded.log_abs_det_jacobian, "sample log density"
+        )
         return decoded.value, log_prob
 
     def entropy(
@@ -212,8 +246,12 @@ class ConditionalRealNVP(nn.Module):
         estimated unless the transformation admits a closed-form expectation.
         """
 
+        validate_sample_count(sample_count)
         if sample_count < 2:
             raise ValueError("at least two samples are required for an entropy standard error")
+        condition = _expand_condition(condition, sample_count)
+        if not torch.equal(condition, condition[:1].expand_as(condition)):
+            raise ValueError("conditional entropy requires one shared condition")
         _, log_prob = self.sample(sample_count, condition, generator=generator)
         values = -log_prob
         estimate = values.mean()
@@ -227,6 +265,13 @@ class ConditionalRealNVP(nn.Module):
             raise ValueError("condition batch dimension must match value")
         if condition.shape[-1] != self.config.condition_dim:
             raise ValueError("condition has the wrong final dimension")
+        finite_tensor(value, "value")
+        finite_tensor(condition, "condition")
+        reference = next(self.parameters())
+        if value.dtype != reference.dtype or condition.dtype != reference.dtype:
+            raise ValueError("value and condition dtype must match the flow")
+        if value.device != reference.device or condition.device != reference.device:
+            raise ValueError("value and condition device must match the flow")
 
 
 def _expand_condition(condition: Tensor, sample_count: int) -> Tensor:

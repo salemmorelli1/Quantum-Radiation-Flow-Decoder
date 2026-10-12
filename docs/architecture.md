@@ -49,8 +49,17 @@ This is a methodological requirement, not merely a training convenience.
 - Jacobians are accumulated as log determinants.
 - Gradient norms are clipped.
 - Mass is stopped above a positive floor.
-- Entropies include Monte Carlo standard errors.
-- All random generators are explicitly seeded.
+- Entropies, both KL directions, and paired decoder diagnostics include Monte Carlo standard errors. Recovery intervals are pointwise and conditional on one fitted seed.
+- Initialization, training, target evaluation, flow evaluation, and null controls use separate named seeded streams. The pipeline restores caller RNG and default dtype.
+
+## Artifact and scientific status
+
+Each run saves model and target states plus source/state/file fingerprints. The
+reload script verifies the bundle and repeats the same held-out evaluation.
+`COMPLETED` records finite execution; scientific validation remains `NOT_ASSESSED`
+until preregistered tolerances, trained ablations, and seed-family inference are
+executed. Independent random-state and known-reference-inverse controls are
+diagnostics, not those trained ablations.
 
 ## Scaling
 

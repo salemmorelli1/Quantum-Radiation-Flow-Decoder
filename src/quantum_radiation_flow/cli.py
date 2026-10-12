@@ -29,6 +29,7 @@ def main() -> int:
     result = run_experiment(config, output_directory=args.output)
     final = result["curve"][-1]
     print(f"status={result['status']}")
+    print(f"scientific_validation={result['scientific_validation']['status']}")
     print(f"final_decoder_fidelity={final['decoder_fidelity']:.6f}")
     print(f"artifacts={args.output}")
     return 0

@@ -58,6 +58,7 @@ def visibility(time: np.ndarray, width: float = 0.075) -> np.ndarray:
 
 
 def fidelity_surrogate(time: np.ndarray, complex_dimension: int = 4, width: float = 0.075) -> np.ndarray:
+    # Heuristic interpolation, not E[normalized Gaussian state fidelity].
     floor = 1.0 / complex_dimension
     return floor + (1.0 - floor) * visibility(time, width=width) ** 2
 
@@ -242,7 +243,7 @@ def main() -> None:
         "late_fidelity_surrogate": float(fidelity_surrogate(np.array([0.9]))[0]),
         "telemetry_entropy_min": float(telemetry_entropy(np.linspace(0, 1, 201)).min()),
         "telemetry_entropy_max": float(telemetry_entropy(np.linspace(0, 1, 201)).max()),
-        "seed_status": "deterministic analytic benchmark",
+        "seed_status": "analytic Page benchmark; illustrative entropy and fidelity proxies",
     }
     (ROOT / "reference_metrics.json").write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(metrics, indent=2))
